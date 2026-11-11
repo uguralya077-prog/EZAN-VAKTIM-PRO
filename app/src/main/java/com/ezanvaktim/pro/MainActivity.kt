@@ -1055,7 +1055,10 @@ class MainActivity : Activity(), SensorEventListener {
                 val quranDuas=listOf(
                     Triple("Bakara 2:201 • Dünya ve ahiret iyiliği","رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ","Rabbimiz! Bize dünyada iyilik, ahirette de iyilik ver; bizi ateşin azabından kor."),
                     Triple("Tâhâ 20:114 • İlim","رَبِّ زِدْنِي عِلْمًا","Rabbim! İlmimi artır."),
-                    Triple("A'râf 7:23 • Bağışlanma","رَبَّنَا ظَلَمْنَا أَنْفُسَنَا وَإِنْ لَمْ تَغْفِرْ لَنَا وَتَرْحَمْنَا لَنَكُونَنَّ مِنَ الْخَاسِرِينَ","Rabbimiz! Biz kendimize zulmettik. Bizi bağışlamaz ve bize merhamet etmezsen mutlaka ziyana uğrayanlardan oluruz.")
+                    Triple("A'râf 7:23 • Bağışlanma","رَبَّنَا ظَلَمْنَا أَنْفُسَنَا وَإِنْ لَمْ تَغْفِرْ لَنَا وَتَرْحَمْنَا لَنَكُونَنَّ مِنَ الْخَاسِرِينَ","Rabbimiz! Biz kendimize zulmettik. Bizi bağışlamaz ve bize merhamet etmezsen mutlaka ziyana uğrayanlardan oluruz."),
+                    Triple("Âl-i İmrân 3:8 • Kalbin doğruluğu","رَبَّنَا لَا تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا وَهَبْ لَنَا مِنْ لَدُنْكَ رَحْمَةً إِنَّكَ أَنْتَ الْوَهَّابُ","Rabbimiz! Bizi doğru yola ilettikten sonra kalplerimizi eğriltme; bize katından rahmet bağışla. Şüphesiz çok bağışlayan sensin."),
+                    Triple("İbrâhîm 14:40 • Namaz duası","رَبِّ اجْعَلْنِي مُقِيمَ الصَّلَاةِ وَمِنْ ذُرِّيَّتِي رَبَّنَا وَتَقَبَّلْ دُعَاءِ","Rabbim! Beni ve soyumdan gelecekleri namazı devamlı kılanlardan eyle. Rabbimiz, duamı kabul et."),
+                    Triple("Furkân 25:74 • Aile duası","رَبَّنَا هَبْ لَنَا مِنْ أَزْوَاجِنَا وَذُرِّيَّاتِنَا قُرَّةَ أَعْيُنٍ وَاجْعَلْنَا لِلْمُتَّقِينَ إِمَامًا","Rabbimiz! Eşlerimizi ve çocuklarımızı bize göz aydınlığı kıl; bizi takvâ sahiplerine önder eyle.")
                 )
                 quranDuas.forEach { (title,arabic,meaning) ->
                     root.addView(panel().apply {
