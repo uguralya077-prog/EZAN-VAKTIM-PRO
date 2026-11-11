@@ -52,10 +52,12 @@ class MainActivity : Activity(), SensorEventListener {
     private var timerLabel:TextView?=null
     private var timerTarget:LocalDateTime?=null
     private var timerPrayer=""
+    private var requestGeneration=0
     private val timerTick=object:Runnable {
         override fun run() {
             val target=timerTarget ?: return
             if(section!="Vakitler") return
+            if(!target.isAfter(LocalDateTime.now())) { timerHandler.removeCallbacks(this); loadTimes(); return }
             val sec=java.time.Duration.between(LocalDateTime.now(),target).seconds.coerceAtLeast(0)
             timerLabel?.text=String.format(Locale.getDefault(),"Sıradaki: %s   %02d:%02d:%02d",timerPrayer,sec/3600,(sec%3600)/60,sec%60)
             timerHandler.postDelayed(this,1000)
@@ -71,7 +73,6 @@ class MainActivity : Activity(), SensorEventListener {
         notificationManager.createNotificationChannel(NotificationChannel(CHANNEL,"Namaz bildirimleri",NotificationManager.IMPORTANCE_HIGH))
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 20)
         render()
-        loadTimes()
     }
 
     private fun text(s: String, size: Float = 18f, color: Int = white): TextView = TextView(this).apply {
@@ -92,6 +93,7 @@ class MainActivity : Activity(), SensorEventListener {
         text=label; setTextColor(white); setBackgroundColor(green); setOnClickListener { click() }
     }
     private fun render() {
+        requestGeneration++
         timerHandler.removeCallbacks(timerTick)
         timerTarget=null
         timerLabel=null
@@ -247,6 +249,8 @@ class MainActivity : Activity(), SensorEventListener {
     private fun loadTimes() {
         val date=LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
         val cacheKey="times_${LocalDate.now()}_${latitude}_${longitude}"
+        if(section!="Vakitler") return
+        val generation=requestGeneration
         val cached=prefs.getString(cacheKey,null)
         if(cached!=null) { showTimes(JSONObject(cached)); return }
         timesBox.removeAllViews(); timesBox.addView(text("Vakitler yükleniyor…",16f))
@@ -257,8 +261,8 @@ class MainActivity : Activity(), SensorEventListener {
                 val json=JSONObject(connection.getInputStream().bufferedReader().use { it.readText() })
                 val timings=json.getJSONObject("data").getJSONObject("timings")
                 prefs.edit().putString(cacheKey,timings.toString()).apply()
-                runOnUiThread { showTimes(timings) }
-            } catch(e:Exception) { runOnUiThread { timesBox.removeAllViews(); timesBox.addView(text("Vakitler alınamadı. İnternet bağlantısını kontrol edin. ${e.message}",15f)) } }
+                runOnUiThread { if(section=="Vakitler" && generation==requestGeneration) showTimes(timings) }
+            } catch(e:Exception) { runOnUiThread { if(section=="Vakitler" && generation==requestGeneration) { timesBox.removeAllViews(); timesBox.addView(text("Vakitler alınamadı. İnternet bağlantısını kontrol edin.",15f)) } } }
         }
     }
     private fun showTimes(obj:JSONObject) {
