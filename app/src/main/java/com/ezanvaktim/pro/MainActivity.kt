@@ -45,6 +45,7 @@ class MainActivity : Activity(), SensorEventListener {
     private var longitude = 36.9228
     private var bearing = 0.0
     private var dial: QiblaDial? = null
+    private var audioPreview:android.media.MediaPlayer?=null
     private var locationLabel = "Kahramanmaraş (örnek konum)"
     private val gold = Color.rgb(215,181,109)
     private val white = Color.rgb(241,244,239)
@@ -239,6 +240,11 @@ class MainActivity : Activity(), SensorEventListener {
                 }
                 root.addView(button("Tam ezan dosyası seç") { pickAudio(pickFull) })
                 root.addView(button("Kısa ezan dosyası seç") { pickAudio(pickShort) })
+                root.addView(text("SES ÖN İZLEMESİ",19f,gold))
+                root.addView(button("▶ Tam ezanı dinle") { previewAudio("full") })
+                root.addView(button("▶ Kısa ezanı dinle") { previewAudio("short") })
+                root.addView(button("■ Dinlemeyi durdur") { stopAudioPreview() })
+                root.addView(text("Ön izleme yalnızca seçtiğiniz yerel ses dosyasını çalar; alarmı başlatmaz.",13f))
                 root.addView(text("Ses çalmak için cihazınızdan bir ezan kaydı seçin. Namaz vakti bildirimleri Android izinlerine bağlıdır.",14f))
             }
             "Kur'an" -> {
@@ -446,6 +452,35 @@ class MainActivity : Activity(), SensorEventListener {
             }
         }
     }
+    private fun stopAudioPreview() {
+        try { audioPreview?.stop() } catch(_:Exception) {}
+        try { audioPreview?.release() } catch(_:Exception) {}
+        audioPreview=null
+    }
+    private fun previewAudio(key:String) {
+        stopAudioPreview()
+        val value=prefs.getString(key,null)
+        if(value.isNullOrBlank()) {
+            Toast.makeText(this,"Önce bu ezan için ses dosyası seçin",Toast.LENGTH_LONG).show()
+            return
+        }
+        try {
+            val player=android.media.MediaPlayer()
+            audioPreview=player
+            player.setDataSource(this,Uri.parse(value))
+            player.setOnPreparedListener { it.start() }
+            player.setOnCompletionListener { stopAudioPreview() }
+            player.setOnErrorListener { _,_,_ ->
+                stopAudioPreview()
+                Toast.makeText(this,"Ses oynatılamadı",Toast.LENGTH_SHORT).show()
+                true
+            }
+            player.prepareAsync()
+        } catch(_:Exception) {
+            stopAudioPreview()
+            Toast.makeText(this,"Ses dosyası açılamadı. Dosyayı yeniden seçin.",Toast.LENGTH_LONG).show()
+        }
+    }
     private fun pickAudio(code:Int) { startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply { type="audio/*"; addCategory(Intent.CATEGORY_OPENABLE) },code) }
     @Deprecated("Activity result API compatibility")
     override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?) {
@@ -532,7 +567,7 @@ class MainActivity : Activity(), SensorEventListener {
         sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)?.also { sensorManager.registerListener(this,it,SensorManager.SENSOR_DELAY_UI) }
         if(section=="Kıble" && sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)==null) compass.text="Bu cihazda pusula sensörü bulunamadı"
     }
-    override fun onPause() { timerHandler.removeCallbacks(timerTick); sensorManager.unregisterListener(this); super.onPause() }
+    override fun onPause() { stopAudioPreview(); timerHandler.removeCallbacks(timerTick); sensorManager.unregisterListener(this); super.onPause() }
     override fun onSensorChanged(event:SensorEvent) {
         if(event.sensor.type==Sensor.TYPE_ACCELEROMETER) gravity=event.values.clone()
         if(event.sensor.type==Sensor.TYPE_MAGNETIC_FIELD) magnetic=event.values.clone()
