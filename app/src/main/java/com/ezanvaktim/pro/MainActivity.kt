@@ -46,6 +46,40 @@ class MainActivity : Activity(), SensorEventListener {
     private var bearing = 0.0
     private var dial: QiblaDial? = null
     private var audioPreview:android.media.MediaPlayer?=null
+    private var tilavetPlayer:android.media.MediaPlayer?=null
+    private fun stopTilavet() {
+        try { tilavetPlayer?.stop() } catch(_:Exception) { }
+        try { tilavetPlayer?.release() } catch(_:Exception) { }
+        tilavetPlayer=null
+    }
+    private fun playTilavet(surahNumber:Int, reciter:String="ar.alafasy") {
+        stopReading()
+        stopTilavet()
+        if(surahNumber !in 1..114) return
+        val url="https://cdn.islamic.network/quran/audio-surah/128/$reciter/$surahNumber.mp3"
+        val player=android.media.MediaPlayer()
+        tilavetPlayer=player
+        try {
+            player.setAudioAttributes(android.media.AudioAttributes.Builder()
+                .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build())
+            player.setDataSource(url)
+            player.setOnPreparedListener { if(tilavetPlayer===it) it.start() }
+            player.setOnErrorListener { mp,_,_ ->
+                if(tilavetPlayer===mp) {
+                    stopTilavet()
+                    Toast.makeText(this,"Tilavet açılamadı. İnternet bağlantısını veya başka kâriyi deneyin.",Toast.LENGTH_LONG).show()
+                }
+                true
+            }
+            player.setOnCompletionListener { if(tilavetPlayer===it) stopTilavet() }
+            player.prepareAsync()
+            Toast.makeText(this,"Tilavet yükleniyor…",Toast.LENGTH_SHORT).show()
+        } catch(_:Exception) {
+            stopTilavet()
+            Toast.makeText(this,"Tilavet bağlantısı kurulamadı",Toast.LENGTH_LONG).show()
+        }
+    }
     private var speech:android.speech.tts.TextToSpeech?=null
     private var speechReady=false
     private fun readAloud(value:String,arabic:Boolean=true) {
@@ -763,6 +797,18 @@ class MainActivity : Activity(), SensorEventListener {
                     val index=prefs.getInt("quran_import_last",0).coerceIn(0,113)
                     val surah=items.getJSONObject(index)
                     root.addView(text("${index+1}. ${surah.getString("name")}",23f,gold))
+                    root.addView(text("GERÇEK KUR'AN TİLAVETİ • internet gerektirir",17f,gold))
+                    val reciters=listOf("Mişârî Râşid el-Afâsî" to "ar.alafasy","Mahmud Halil el-Husarî" to "ar.husary","Muhammed Sıddîk el-Minşâvî" to "ar.minshawi")
+                    val reciterPicker=Spinner(this).apply {
+                        adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,reciters.map { it.first })
+                    }
+                    root.addView(reciterPicker)
+                    root.addView(button("▶ Sûreyi hafızdan dinle") {
+                        playTilavet(index+1,reciters[reciterPicker.selectedItemPosition].second)
+                    })
+                    root.addView(button("■ Tilaveti durdur") { stopTilavet() })
+                    root.addView(text("Ses kayıtları Al Quran Cloud CDN üzerinden çevrim içi çalınır; APK içinde ses kaydı saklanmaz.",13f,accent))
+
                     root.addView(button("Sûre metnini paylaş") {
                         val versesForShare=surah.getJSONArray("verses")
                         val mealForShare=surah.optJSONArray("translations")
@@ -1573,8 +1619,9 @@ class MainActivity : Activity(), SensorEventListener {
         sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)?.also { sensorManager.registerListener(this,it,SensorManager.SENSOR_DELAY_UI) }
         if(section=="Kıble" && sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)==null) compass.text="Bu cihazda pusula sensörü bulunamadı"
     }
-    override fun onPause() { stopReading(); stopAudioPreview(); timerHandler.removeCallbacks(timerTick); sensorManager.unregisterListener(this); super.onPause() }
+    override fun onPause() { stopTilavet(); stopReading(); stopAudioPreview(); timerHandler.removeCallbacks(timerTick); sensorManager.unregisterListener(this); super.onPause() }
     override fun onDestroy() {
+        stopTilavet()
         stopReading()
         speech?.shutdown()
         speech=null
