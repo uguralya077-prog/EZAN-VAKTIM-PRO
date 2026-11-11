@@ -348,6 +348,7 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(button("← Kur'an menüsüne dön") { section="Kur'an"; render() })
                 root.addView(text("ÇEVRİM DIŞI KISA SÛRELER",23f,gold))
                 root.addView(text("Arapça metinler cihazda saklanır; internet bağlantısı gerektirmez. Bu bölüm tam Kur'an veya meal veritabanı değildir.",14f))
+                root.addView(text("Sûreleri aşağı kaydırarak okuyabilir, her birinin Arapça metnini kopyalayabilirsiniz.",14f,accent))
                 val surahs=listOf(
                     Triple("Fâtiha • 1. sûre","بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nالْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ\nالرَّحْمَٰنِ الرَّحِيمِ\nمَالِكِ يَوْمِ الدِّينِ\nإِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ\nاهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ\nصِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ","7 âyet"),
                     Triple("İhlâs • 112. sûre","بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nقُلْ هُوَ اللَّهُ أَحَدٌ\nاللَّهُ الصَّمَدُ\nلَمْ يَلِدْ وَلَمْ يُولَدْ\nوَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ","4 âyet"),
