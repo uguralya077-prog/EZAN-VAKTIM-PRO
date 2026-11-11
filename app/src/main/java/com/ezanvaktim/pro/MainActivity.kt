@@ -1029,6 +1029,7 @@ object PrayerRefresh {
                 prefs.edit().putString(cacheKey,it.toString()).apply()
             }
         }
+        if(!keys.all { key -> Regex("^\\d{2}:\\d{2}").containsMatchIn(timings.optString(key)) }) throw IllegalStateException("Eksik vakit verisi")
         val schedule=keys.mapIndexedNotNull { index,key ->
             if(index==1) null else try {
                 names[index] to LocalDateTime.of(today,LocalTime.parse(timings.getString(key).take(5)))
