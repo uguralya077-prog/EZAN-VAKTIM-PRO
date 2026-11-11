@@ -516,14 +516,17 @@ class MainActivity : Activity(), SensorEventListener {
         val rotation=FloatArray(9); val orientation=FloatArray(3)
         if(!SensorManager.getRotationMatrix(rotation,null,g,m)) return
         SensorManager.getOrientation(rotation,orientation)
-        val azimuth=(Math.toDegrees(orientation[0].toDouble())+360)%360
+        val magneticAzimuth=(Math.toDegrees(orientation[0].toDouble())+360)%360
+        val declination=android.hardware.GeomagneticField(latitude.toFloat(),longitude.toFloat(),0f,System.currentTimeMillis()).declination.toDouble()
+        val azimuth=(magneticAzimuth+declination+360)%360
         val lat1=Math.toRadians(latitude); val lonDiff=Math.toRadians(39.8262-longitude)
         val lat2=Math.toRadians(21.4225)
         bearing=(Math.toDegrees(atan2(sin(lonDiff),cos(lat1)*tan(lat2)-sin(lat1)*cos(lonDiff)))+360)%360
         val relative=(bearing-azimuth+360)%360
+        val shortestTurn=if(relative>180) relative-360 else relative
         if(section!="Kıble") return
         dial?.angle=relative.toFloat()
-        compass.text="🕋\nKıble: %.1f° (gerçek kuzey)\nPusula yönü: %.1f° (manyetik)\nKıbleye dönüş: %.1f° sağa".format(Locale.getDefault(),bearing,azimuth,relative)
+        compass.text="🕋\nKıble: %.1f° (gerçek kuzey)\nPusula yönü: %.1f° (gerçek kuzey)\nKıbleye dönüş: %.1f° %s".format(Locale.getDefault(),bearing,azimuth,kotlin.math.abs(shortestTurn),if(shortestTurn<0) "sola" else "sağa")
     }
     override fun onAccuracyChanged(sensor:Sensor?,accuracy:Int) {}
 }
