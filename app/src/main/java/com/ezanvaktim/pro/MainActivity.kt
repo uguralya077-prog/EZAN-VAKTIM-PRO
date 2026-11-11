@@ -828,6 +828,7 @@ class MainActivity : Activity(), SensorEventListener {
 
                     val verses=surah.getJSONArray("verses")
                     val translations=surah.optJSONArray("translations")
+                    var onlineTranslations:org.json.JSONArray?=null
                     val source=loadBundledOrImportedQuran()
                     val attribution=source.optString("source","").trim()
                     val translationSource=source.optString("translation_source","").trim()
@@ -840,10 +841,42 @@ class MainActivity : Activity(), SensorEventListener {
                         text="Türkçe meali göster"
                         setTextColor(white)
                         isChecked=prefs.getBoolean("quran_show_translation",true)
-                        isEnabled=translations!=null
+                        isEnabled=true
                     }
-                    if(translations!=null) root.addView(mealToggle)
-                    else root.addView(text("Bu dosyada Türkçe meal bulunmuyor.",14f))
+                    root.addView(mealToggle)
+                    if(translations==null) {
+                        val mealStatus=text("Türkçe meal: çevrim içi yükleyebilir veya izinli JSON meal dosyası içe aktarabilirsiniz.",14f,accent)
+                        root.addView(mealStatus)
+                        root.addView(button("🌐 Türkçe meali ayetlerin altına yükle") {
+                            mealStatus.text="Türkçe meal yükleniyor…"
+                            thread {
+                                try {
+                                    val url=URL("https://api.alquran.cloud/v1/surah/${index+1}/tr.vakfi")
+                                    val connection=(url.openConnection() as java.net.HttpURLConnection).apply {
+                                        connectTimeout=12000; readTimeout=12000
+                                    }
+                                    val response=try {
+                                        if(connection.responseCode !in 200..299) throw IllegalStateException("Meal servisi yanıt vermedi")
+                                        JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+                                    } finally { connection.disconnect() }
+                                    val ayahs=response.getJSONObject("data").getJSONArray("ayahs")
+                                    if(ayahs.length()!=verses.length()) throw IllegalStateException("Ayet sayısı uyuşmuyor")
+                                    val result=org.json.JSONArray()
+                                    for(v in 0 until ayahs.length()) result.put(ayahs.getJSONObject(v).getString("text"))
+                                    runOnUiThread {
+                                        if(section=="İçe Aktarılan Sûre" && prefs.getInt("quran_import_last",0)==index) {
+                                            onlineTranslations=result
+                                            mealToggle.isChecked=true
+                                            mealStatus.text="Türkçe meal: Türkiye Diyanet Vakfı (Al Quran Cloud üzerinden). Çevrim içi gösterilir."
+                                            drawVerses()
+                                        }
+                                    }
+                                } catch(e:Exception) {
+                                    runOnUiThread { mealStatus.text="Meal yüklenemedi: ${e.message}. İzinli meal dosyası içe aktarabilirsiniz." }
+                                }
+                            }
+                        })
+                    }
                     var arabicSize=prefs.getFloat("quran_import_arabic_size",26f).coerceIn(18f,42f)
                     var translationSize=prefs.getFloat("quran_import_translation_size",16f).coerceIn(12f,28f)
                     val fontControls=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
@@ -886,8 +919,9 @@ class MainActivity : Activity(), SensorEventListener {
                             }
                             verseViews.add(verseText)
                             verseContainer.addView(verseText)
-                            if(mealToggle.isChecked && translations!=null) {
-                                verseContainer.addView(text("${v+1}. ${translations.getString(v)}",translationSize,accent))
+                            val activeMeal=translations ?: onlineTranslations
+                            if(mealToggle.isChecked && activeMeal!=null) {
+                                verseContainer.addView(text("${v+1}. ${activeMeal.getString(v)}",translationSize,accent))
                             }
                         }
                     }
