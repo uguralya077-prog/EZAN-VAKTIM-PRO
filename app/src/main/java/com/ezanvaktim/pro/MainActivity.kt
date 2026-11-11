@@ -1072,6 +1072,22 @@ object AlarmScheduler {
 }
 
 object PrayerRefresh {
+    private fun pruneOldPrayerCache(prefs:android.content.SharedPreferences) {
+        val oldest=LocalDate.now().minusDays(3)
+        val editor=prefs.edit()
+        var changed=false
+        prefs.all.keys.forEach { key ->
+            if(key.startsWith("times_")) {
+                val date=key.removePrefix("times_").take(10)
+                val parsed=try { LocalDate.parse(date) } catch(_:Exception) { null }
+                if(parsed!=null && parsed.isBefore(oldest)) {
+                    editor.remove(key)
+                    changed=true
+                }
+            }
+        }
+        if(changed) editor.apply()
+    }
     private fun isValidPrayerClock(value:String):Boolean = try {
         LocalTime.parse(value.take(5)); true
     } catch(_:Exception) { false }
@@ -1130,6 +1146,7 @@ object PrayerRefresh {
         AlarmScheduler.scheduleRefresh(context)
         PrayerWidget.refreshAll(context)
         prefs.edit().putBoolean("needs_refresh",false).putLong("last_successful_refresh",System.currentTimeMillis()).apply()
+        pruneOldPrayerCache(prefs)
     }
 }
 
