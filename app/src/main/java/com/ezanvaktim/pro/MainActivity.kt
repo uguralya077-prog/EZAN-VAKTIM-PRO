@@ -460,7 +460,7 @@ class MainActivity : Activity(), SensorEventListener {
                     section="İçe Aktarılan Kur'an"
                     render()
                 })
-                root.addView(text("İçe aktarma için UTF-8 JSON dosyasında 'surahs' dizisi bulunmalı; 114 sûre sırayla 'name' ve 'verses' alanlarını içermelidir. Her 'verses' öğesi Arapça ayet metnidir. Kaynak metnin doğruluğu ve kullanım izni dosyayı sağlayana aittir.",13f))
+                root.addView(text("UTF-8 JSON: 'surahs' dizisinde 114 sûre, her sûrede 'name' ve Arapça ayetlerden oluşan 'verses' bulunmalı. İsteğe bağlı 'translations' dizisi, ayetlerle aynı sayıda Türkçe meal içerebilir. Kaynak metnin doğruluğu ve kullanım izni dosyayı sağlayana aittir.",13f))
                 root.addView(button("Kur'an okuma ekranını aç") {
                     section="Kur'an Oku"
                     render()
@@ -585,7 +585,47 @@ class MainActivity : Activity(), SensorEventListener {
                     val surah=items.getJSONObject(index)
                     root.addView(text("${index+1}. ${surah.getString("name")}",23f,gold))
                     val verses=surah.getJSONArray("verses")
-                    for(v in 0 until verses.length()) {
+                    val translations=surah.optJSONArray("translations")
+                    val mealToggle=CheckBox(this).apply {
+                        text="Türkçe meali göster"
+                        setTextColor(white)
+                        isChecked=prefs.getBoolean("quran_show_translation",true)
+                        isEnabled=translations!=null
+                    }
+                    if(translations!=null) root.addView(mealToggle)
+                    else root.addView(text("Bu dosyada Türkçe meal bulunmuyor.",14f))
+                    val verseContainer=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
+                    root.addView(verseContainer)
+                    fun drawVerses() {
+                        verseContainer.removeAllViews()
+                        for(v in 0 until verses.length()) {
+                            verseContainer.addView(text("${verses.getString(v)}  ﴿${v+1}﴾",26f).apply {
+                                gravity=Gravity.RIGHT
+                                textDirection=android.view.View.TEXT_DIRECTION_RTL
+                            })
+                            if(mealToggle.isChecked && translations!=null) {
+                                verseContainer.addView(text("${v+1}. ${translations.getString(v)}",16f,accent))
+                            }
+                        }
+                    }
+                    mealToggle.setOnCheckedChangeListener { _, checked ->
+                        prefs.edit().putBoolean("quran_show_translation",checked).apply()
+                        drawVerses()
+                    }
+                    drawVerses()
+                    root.addView(LinearLayout(this).apply {
+                        orientation=LinearLayout.HORIZONTAL
+                        if(index>0) addView(button("← Önceki sûre") {
+                            prefs.edit().putInt("quran_import_last",index-1).apply()
+                            render()
+                        },LinearLayout.LayoutParams(0,-2,1f))
+                        if(index<113) addView(button("Sonraki sûre →") {
+                            prefs.edit().putInt("quran_import_last",index+1).apply()
+                            render()
+                        },LinearLayout.LayoutParams(0,-2,1f))
+                    })
+                    /* Original simple verse renderer removed in favor of optional translation display. */
+                    for(v in 0 until 0) {
                         root.addView(text("${verses.getString(v)}  ﴿${v+1}﴾",26f).apply {
                             gravity=Gravity.RIGHT
                             textDirection=android.view.View.TEXT_DIRECTION_RTL
@@ -997,6 +1037,14 @@ class MainActivity : Activity(), SensorEventListener {
                     if(surah.getString("name").isBlank()) throw IllegalArgumentException("Boş sûre adı")
                     val verses=surah.getJSONArray("verses")
                     if(verses.length()<1 || verses.length()>300) throw IllegalArgumentException("Geçersiz ayet sayısı")
+                    val translations=surah.optJSONArray("translations")
+                    if(translations!=null) {
+                        if(translations.length()!=verses.length()) throw IllegalArgumentException("Meal ayet sayısı uyuşmuyor")
+                        for(j in 0 until translations.length()) {
+                            val translation=translations.getString(j)
+                            if(translation.isBlank() || translation.length>5000) throw IllegalArgumentException("Meal metni geçersiz")
+                        }
+                    }
                     for(j in 0 until verses.length()) {
                         val verse=verses.getString(j)
                         if(verse.isBlank() || verse.length>3000 || !verse.any { it in '؀'..'ۿ' }) throw IllegalArgumentException("Arapça ayet metni geçersiz")
