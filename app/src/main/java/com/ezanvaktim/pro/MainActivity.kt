@@ -875,8 +875,8 @@ class MainActivity : Activity(), SensorEventListener {
                         val connection=url.openConnection().apply { connectTimeout=10000; readTimeout=10000 }
                         val json=JSONObject(connection.getInputStream().bufferedReader().use { it.readText() })
                         val timing=json.getJSONObject("data").getJSONObject("timings")
-                        prefs.edit().putString(tomorrowKey,timing.toString()).apply()
                         val exact=LocalDateTime.of(tomorrow,LocalTime.parse(timing.getString("Fajr").take(5)))
+                        prefs.edit().putString(tomorrowKey,timing.toString()).apply()
                         runOnUiThread {
                             if(section=="Vakitler" && requestGeneration==expectedGeneration && latitude==lat && longitude==lon) {
                                 timerTarget=exact
@@ -1099,7 +1099,7 @@ class BootReceiver: android.content.BroadcastReceiver() {
         val pending=goAsync()
         thread {
             try { PrayerRefresh.refresh(context.applicationContext) }
-            catch(_:Exception) { AlarmScheduler.scheduleRefresh(context.applicationContext) }
+            catch(_:Exception) { AlarmScheduler.scheduleRefreshRetry(context.applicationContext) }
             finally { pending.finish() }
         }
     }
