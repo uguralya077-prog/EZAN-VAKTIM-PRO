@@ -833,6 +833,7 @@ class RefreshReceiver: android.content.BroadcastReceiver() {
 
 class AlarmReceiver: android.content.BroadcastReceiver() {
     override fun onReceive(context:Context,intent:Intent) {
+        PrayerWidget.refreshAll(context)
         val name=intent.getStringExtra("name") ?: "Namaz"
         val prefs=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
         if(!prefs.getBoolean("alarm_$name",true)) return
