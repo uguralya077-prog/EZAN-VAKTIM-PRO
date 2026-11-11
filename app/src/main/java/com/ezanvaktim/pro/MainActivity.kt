@@ -122,6 +122,29 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(heading)
                 root.addView(text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy",Locale("tr","TR"))),17f,white).apply { gravity=Gravity.CENTER })
                 root.addView(button("📍 Konumumu kullan") { locate() })
+                root.addView(button("Şehir / koordinat seç") {
+                    val latInput=EditText(this).apply { hint="Enlem (ör. 37.5753)"; setText(latitude.toString()); inputType=android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED }
+                    val lonInput=EditText(this).apply { hint="Boylam (ör. 36.9228)"; setText(longitude.toString()); inputType=android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED }
+                    val labelInput=EditText(this).apply { hint="Şehir adı"; setText(locationLabel) }
+                    val form=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(28,12,28,0); addView(labelInput); addView(latInput); addView(lonInput) }
+                    AlertDialog.Builder(this).setTitle("Konumu elle ayarla").setView(form)
+                        .setNegativeButton("Vazgeç",null)
+                        .setPositiveButton("Kaydet") { _,_ ->
+                            val lat=latInput.text.toString().toDoubleOrNull()
+                            val lon=lonInput.text.toString().toDoubleOrNull()
+                            if(lat==null || lon==null || lat !in -90.0..90.0 || lon !in -180.0..180.0) {
+                                Toast.makeText(this,"Geçerli enlem ve boylam girin",Toast.LENGTH_LONG).show()
+                            } else {
+                                latitude=lat; longitude=lon
+                                locationLabel=labelInput.text.toString().ifBlank { "Seçilen konum" }
+                                prefs.edit().putLong("lat",java.lang.Double.doubleToRawLongBits(lat))
+                                    .putLong("lon",java.lang.Double.doubleToRawLongBits(lon))
+                                    .putString("place",locationLabel).apply()
+                                render()
+                            }
+                        }.show()
+                })
+
                 timerLabel=text("Sonraki vakit hesaplanıyor…",20f,gold).apply { gravity=Gravity.CENTER; setBackgroundColor(green) }
                 root.addView(panel().apply { addView(timerLabel) })
                 root.addView(text("GÜNLÜK NAMAZ VAKİTLERİ",21f,gold))
@@ -285,7 +308,7 @@ class MainActivity : Activity(), SensorEventListener {
         if(section!="Vakitler") return
         val generation=requestGeneration
         val cached=prefs.getString(cacheKey,null)
-        if(cached!=null) { showTimes(JSONObject(cached)); return }
+        if(cached!=null) { try { showTimes(JSONObject(cached)); return } catch(_:Exception) { prefs.edit().remove(cacheKey).apply() } }
         timesBox.removeAllViews(); timesBox.addView(text("Vakitler yükleniyor…",16f))
         thread {
             try {
