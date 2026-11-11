@@ -817,7 +817,12 @@ class MainActivity : Activity(), SensorEventListener {
         val requestedLat=latitude
         val requestedLon=longitude
         val cached=prefs.getString(cacheKey,null)
-        if(cached!=null) { try { showTimes(JSONObject(cached)); return } catch(_:Exception) { prefs.edit().remove(cacheKey).apply() } }
+        if(cached!=null) { try {
+            val obj=JSONObject(cached)
+            if(!keys.all { key -> try { LocalTime.parse(obj.optString(key).take(5)); true } catch(_:Exception) { false } }) throw IllegalStateException("Bozuk vakit kaydı")
+            showTimes(obj)
+            return
+        } catch(_:Exception) { prefs.edit().remove(cacheKey).apply() } }
         timesBox.removeAllViews(); timesBox.addView(text("Vakitler yükleniyor…",16f))
         thread {
             try {
@@ -825,7 +830,7 @@ class MainActivity : Activity(), SensorEventListener {
                 val connection=url.openConnection().apply { connectTimeout=10000; readTimeout=10000 }
                 val json=JSONObject(connection.getInputStream().bufferedReader().use { it.readText() })
                 val timings=json.getJSONObject("data").getJSONObject("timings")
-                if(!keys.all { key -> Regex("^\\d{2}:\\d{2}").containsMatchIn(timings.optString(key)) }) throw IllegalStateException("Eksik vakit verisi")
+                if(!keys.all { key -> try { LocalTime.parse(timings.optString(key).take(5)); true } catch(_:Exception) { false } }) throw IllegalStateException("Eksik vakit verisi")
                 prefs.edit().putString(cacheKey,timings.toString()).apply()
                 runOnUiThread { if(section=="Vakitler" && generation==requestGeneration && latitude==requestedLat && longitude==requestedLon) showTimes(timings) }
             } catch(e:Exception) { runOnUiThread { if(section=="Vakitler" && generation==requestGeneration && latitude==requestedLat && longitude==requestedLon) { timesBox.removeAllViews(); timesBox.addView(text("Vakitler alınamadı. İnternet bağlantısını kontrol edin.",15f)) } } }
