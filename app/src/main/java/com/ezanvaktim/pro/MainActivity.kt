@@ -6,6 +6,7 @@ import android.content.*
 import android.content.pm.PackageManager
 import android.graphics.Color
 import android.graphics.Typeface
+import android.graphics.drawable.GradientDrawable
 import android.hardware.*
 import android.location.LocationManager
 import android.net.Uri
@@ -76,6 +77,17 @@ class MainActivity : Activity(), SensorEventListener {
     private fun text(s: String, size: Float = 18f, color: Int = white): TextView = TextView(this).apply {
         text=s; textSize=size; setTextColor(color); setPadding(18,15,18,15)
     }
+    private fun panel(): LinearLayout = LinearLayout(this).apply {
+        orientation=LinearLayout.VERTICAL
+        setPadding(18,16,18,16)
+        background=GradientDrawable().apply {
+            setColor(Color.rgb(16,49,39))
+            cornerRadius=24f
+            setStroke(2,Color.rgb(66,91,69))
+        }
+        val margins=LinearLayout.LayoutParams(-1,-2).apply { setMargins(0,8,0,8) }
+        layoutParams=margins
+    }
     private fun button(label: String, click: () -> Unit): Button = Button(this).apply {
         text=label; setTextColor(white); setBackgroundColor(green); setOnClickListener { click() }
     }
@@ -106,9 +118,10 @@ class MainActivity : Activity(), SensorEventListener {
             "Vakitler" -> {
                 heading=text(locationLabel,17f,gold).apply { gravity=Gravity.CENTER }
                 root.addView(heading)
+                root.addView(text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy",Locale("tr","TR"))),17f,white).apply { gravity=Gravity.CENTER })
                 root.addView(button("📍 Konumumu kullan") { locate() })
                 timerLabel=text("Sonraki vakit hesaplanıyor…",20f,gold).apply { gravity=Gravity.CENTER; setBackgroundColor(green) }
-                root.addView(timerLabel)
+                root.addView(panel().apply { addView(timerLabel) })
                 root.addView(text("GÜNLÜK NAMAZ VAKİTLERİ",21f,gold))
                 timesBox=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
                 root.addView(timesBox)
@@ -255,7 +268,12 @@ class MainActivity : Activity(), SensorEventListener {
         val schedule=mutableListOf<Pair<String,LocalDateTime>>()
         keys.forEachIndexed { index,key ->
             val raw=obj.optString(key,"--:--").take(5)
-            timesBox.addView(text("${names[index]}                      $raw",19f,if(index==4) gold else white))
+            timesBox.addView(panel().apply {
+                val line=LinearLayout(this@MainActivity).apply { orientation=LinearLayout.HORIZONTAL; gravity=Gravity.CENTER_VERTICAL }
+                line.addView(text(names[index],19f,if(index==4) gold else white),LinearLayout.LayoutParams(0,-2,1f))
+                line.addView(text(raw,22f,gold))
+                addView(line)
+            })
             try {
                 val at=LocalDateTime.of(LocalDate.now(),LocalTime.parse(raw))
                 if(next.isEmpty() && at.toLocalTime().isAfter(now)) next=names[index]
