@@ -118,6 +118,19 @@ class MainActivity : Activity(), SensorEventListener {
                     prefs.edit().putInt("mode",spinner.selectedItemPosition).apply()
                     Toast.makeText(this,"Ezan modu kaydedildi",Toast.LENGTH_SHORT).show()
                 })
+                root.addView(text("NAMAZ BAZINDA BİLDİRİMLER",19f,gold))
+                listOf("İmsak","Öğle","İkindi","Akşam","Yatsı").forEach { prayer ->
+                    root.addView(CheckBox(this).apply {
+                        text="$prayer bildirimi"
+                        setTextColor(white)
+                        textSize=17f
+                        isChecked=prefs.getBoolean("alarm_$prayer",true)
+                        setOnCheckedChangeListener { _, enabled ->
+                            prefs.edit().putBoolean("alarm_$prayer",enabled).apply()
+                            PrayerRefresh.refreshFromCache(this@MainActivity)
+                        }
+                    })
+                }
                 root.addView(button("Tam ezan dosyası seç") { pickAudio(pickFull) })
                 root.addView(button("Kısa ezan dosyası seç") { pickAudio(pickShort) })
                 root.addView(text("Ses çalmak için cihazınızdan bir ezan kaydı seçin. Namaz vakti bildirimleri Android izinlerine bağlıdır.",14f))
@@ -264,6 +277,10 @@ object AlarmScheduler {
     fun schedule(context:Context, times:List<Pair<String,LocalDateTime>>) {
         val manager=context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         times.forEachIndexed { index,(name,time) ->
+            if(!context.getSharedPreferences(PREF,Context.MODE_PRIVATE).getBoolean("alarm_$name",true)) {
+                manager.cancel(PendingIntent.getBroadcast(context,index,Intent(context,AlarmReceiver::class.java),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
+                return@forEachIndexed
+            }
             if(!time.isAfter(LocalDateTime.now())) {
                 manager.cancel(PendingIntent.getBroadcast(context,index,Intent(context,AlarmReceiver::class.java),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
                 return@forEachIndexed
@@ -284,6 +301,19 @@ object AlarmScheduler {
 }
 
 object PrayerRefresh {
+    fun refreshFromCache(context:Context) {
+        val prefs=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
+        val lat=java.lang.Double.longBitsToDouble(prefs.getLong("lat",java.lang.Double.doubleToRawLongBits(37.5753)))
+        val lon=java.lang.Double.longBitsToDouble(prefs.getLong("lon",java.lang.Double.doubleToRawLongBits(36.9228)))
+        val cached=prefs.getString("times_${LocalDate.now()}_${lat}_${lon}",null) ?: return
+        val timings=JSONObject(cached)
+        val schedule=keys.mapIndexedNotNull { index,key ->
+            if(index==1) null else try {
+                names[index] to LocalDateTime.of(LocalDate.now(),LocalTime.parse(timings.getString(key).take(5)))
+            } catch(_:Exception) { null }
+        }
+        AlarmScheduler.schedule(context,schedule)
+    }
     fun refresh(context:Context) {
         val prefs=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
         val lat=java.lang.Double.longBitsToDouble(prefs.getLong("lat",java.lang.Double.doubleToRawLongBits(37.5753)))
@@ -325,6 +355,7 @@ class AlarmReceiver: android.content.BroadcastReceiver() {
     override fun onReceive(context:Context,intent:Intent) {
         val name=intent.getStringExtra("name") ?: "Namaz"
         val prefs=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
+        if(!prefs.getBoolean("alarm_$name",true)) return
         val mode=prefs.getInt("mode",2)
         val key=if(mode==0) "full" else "short"
         val audio=prefs.getString(key,null)
