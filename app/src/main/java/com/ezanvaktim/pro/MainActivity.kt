@@ -1063,7 +1063,6 @@ object AlarmScheduler {
         val manager=context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val flags=PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         val prefs=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
-        // Remove pending intents created by older versions using list positions.
         if(!prefs.getBoolean("alarm_id_migrated_v2",false)) {
             for(oldId in 0..4) {
                 val old=PendingIntent.getBroadcast(context,oldId,Intent(context,AlarmReceiver::class.java),flags)
@@ -1072,11 +1071,12 @@ object AlarmScheduler {
             }
             prefs.edit().putBoolean("alarm_id_migrated_v2",true).apply()
         }
-        for((name,time) in times) {
-            val id=prayerIds[name] ?: continue
+        val byName=times.toMap()
+        for((name,id) in prayerIds) {
             val intent=Intent(context,AlarmReceiver::class.java).putExtra("name",name)
             val pending=PendingIntent.getBroadcast(context,id,intent,flags)
-            if(!prefs.getBoolean("alarm_$name",true) || !time.isAfter(LocalDateTime.now())) {
+            val time=byName[name]
+            if(!prefs.getBoolean("alarm_$name",true) || time==null || !time.isAfter(LocalDateTime.now())) {
                 manager.cancel(pending)
                 continue
             }
