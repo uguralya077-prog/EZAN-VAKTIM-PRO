@@ -814,18 +814,21 @@ class MainActivity : Activity(), SensorEventListener {
         val cacheKey="times_${LocalDate.now()}_${latitude}_${longitude}"
         if(section!="Vakitler") return
         val generation=requestGeneration
+        val requestedLat=latitude
+        val requestedLon=longitude
         val cached=prefs.getString(cacheKey,null)
         if(cached!=null) { try { showTimes(JSONObject(cached)); return } catch(_:Exception) { prefs.edit().remove(cacheKey).apply() } }
         timesBox.removeAllViews(); timesBox.addView(text("Vakitler yükleniyor…",16f))
         thread {
             try {
-                val url=URL("https://api.aladhan.com/v1/timings/$date?latitude=$latitude&longitude=$longitude&method=13")
+                val url=URL("https://api.aladhan.com/v1/timings/$date?latitude=$requestedLat&longitude=$requestedLon&method=13")
                 val connection=url.openConnection().apply { connectTimeout=10000; readTimeout=10000 }
                 val json=JSONObject(connection.getInputStream().bufferedReader().use { it.readText() })
                 val timings=json.getJSONObject("data").getJSONObject("timings")
+                if(!keys.all { key -> Regex("^\\d{2}:\\d{2}").containsMatchIn(timings.optString(key)) }) throw IllegalStateException("Eksik vakit verisi")
                 prefs.edit().putString(cacheKey,timings.toString()).apply()
-                runOnUiThread { if(section=="Vakitler" && generation==requestGeneration) showTimes(timings) }
-            } catch(e:Exception) { runOnUiThread { if(section=="Vakitler" && generation==requestGeneration) { timesBox.removeAllViews(); timesBox.addView(text("Vakitler alınamadı. İnternet bağlantısını kontrol edin.",15f)) } } }
+                runOnUiThread { if(section=="Vakitler" && generation==requestGeneration && latitude==requestedLat && longitude==requestedLon) showTimes(timings) }
+            } catch(e:Exception) { runOnUiThread { if(section=="Vakitler" && generation==requestGeneration && latitude==requestedLat && longitude==requestedLon) { timesBox.removeAllViews(); timesBox.addView(text("Vakitler alınamadı. İnternet bağlantısını kontrol edin.",15f)) } } }
         }
     }
     private fun showTimes(obj:JSONObject) {
