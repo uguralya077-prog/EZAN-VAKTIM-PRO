@@ -19,8 +19,12 @@ jobs:
       - uses: gradle/actions/setup-gradle@v4
         with:
           gradle-version: '8.9'
+      - name: Read-only Quran regression checks
+        run: python3 scripts/check_quran_integrity.py
       - name: Build APK
         run: gradle --no-daemon :app:assembleDebug --stacktrace
+      - name: Verify APK output
+        run: test -s app/build/outputs/apk/debug/app-debug.apk
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
