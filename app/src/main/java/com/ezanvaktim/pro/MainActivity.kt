@@ -425,6 +425,7 @@ class MainActivity : Activity(), SensorEventListener {
                     Triple("Kur'an","İlim duası (Tâhâ 20:114)","Rabbi zidnî ilmâ."),
                     Triple("Kur'an","Bağışlanma (A'râf 7:23)","Rabbenâ zalemnâ enfüsenâ ve in lem tağfir lenâ ve terhamnâ le-nekûnenne minel hâsirîn.")
                 )
+                val duaFavorites=prefs.getStringSet("favorite_duas",emptySet())?.toMutableSet() ?: mutableSetOf()
                 val categories=listOf("Tümü")+duas.map { it.first }.distinct()
                 val category=Spinner(this).apply {
                     adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,categories)
@@ -437,6 +438,8 @@ class MainActivity : Activity(), SensorEventListener {
                     setHintTextColor(Color.LTGRAY)
                 }
                 root.addView(search)
+                val onlyDuaFavorites=CheckBox(this).apply { text="Yalnızca favori dualarım"; setTextColor(gold) }
+                root.addView(onlyDuaFavorites)
                 val results=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
                 root.addView(results)
                 fun refreshDuas() {
@@ -444,6 +447,7 @@ class MainActivity : Activity(), SensorEventListener {
                     val selected=categories[category.selectedItemPosition]
                     val query=search.text.toString().trim()
                     duas.filter { (group,title,body) ->
+                        (!onlyDuaFavorites.isChecked || duaFavorites.contains(title)) &&
                         (selected=="Tümü" || selected==group) &&
                         (query.isEmpty() || title.contains(query,true) || body.contains(query,true) || group.contains(query,true))
                     }.forEach { (group,title,body) ->
@@ -451,6 +455,11 @@ class MainActivity : Activity(), SensorEventListener {
                             addView(text(group.uppercase(Locale("tr","TR")),13f,gold))
                             addView(text(title,19f,white))
                             addView(text(body,17f,gold))
+                            addView(button(if(duaFavorites.contains(title)) "★ Favorilerimden çıkar" else "☆ Favorilere ekle") {
+                                if(!duaFavorites.add(title)) duaFavorites.remove(title)
+                                prefs.edit().putStringSet("favorite_duas",duaFavorites.toSet()).apply()
+                                refreshDuas()
+                            })
                             addView(button("Metni kopyala") {
                                 val clipboard=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                 clipboard.setPrimaryClip(ClipData.newPlainText(title,body))
@@ -459,6 +468,7 @@ class MainActivity : Activity(), SensorEventListener {
                         })
                     }
                 }
+                onlyDuaFavorites.setOnCheckedChangeListener { _,_ -> refreshDuas() }
                 category.onItemSelectedListener=object:android.widget.AdapterView.OnItemSelectedListener {
                     override fun onNothingSelected(parent:android.widget.AdapterView<*>?) {}
                     override fun onItemSelected(parent:android.widget.AdapterView<*>?,view:android.view.View?,position:Int,id:Long) { refreshDuas() }
