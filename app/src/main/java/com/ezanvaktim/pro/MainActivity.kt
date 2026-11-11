@@ -1230,9 +1230,18 @@ class MainActivity : Activity(), SensorEventListener {
         thread {
             try {
                 val url=URL("https://api.aladhan.com/v1/timings/$date?latitude=$requestedLat&longitude=$requestedLon&method=13")
-                val connection=url.openConnection().apply { connectTimeout=10000; readTimeout=10000 }
-                val json=JSONObject(connection.getInputStream().bufferedReader().use { it.readText() })
-                val timings=json.getJSONObject("data").getJSONObject("timings")
+                val connection=(url.openConnection() as java.net.HttpURLConnection).apply {
+                    connectTimeout=10000
+                    readTimeout=10000
+                    requestMethod="GET"
+                }
+                val timings=try {
+                    if(connection.responseCode !in 200..299) throw IllegalStateException("Vakit servisi HTTP hatası")
+                    JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+                        .getJSONObject("data").getJSONObject("timings")
+                } finally {
+                    connection.disconnect()
+                }
                 if(!keys.all { key -> try { LocalTime.parse(timings.optString(key).take(5)); true } catch(_:Exception) { false } }) throw IllegalStateException("Eksik vakit verisi")
                 prefs.edit().putString(cacheKey,timings.toString()).apply()
                 runOnUiThread { if(section=="Vakitler" && generation==requestGeneration && latitude==requestedLat && longitude==requestedLon) showTimes(timings) }
@@ -1479,10 +1488,15 @@ object PrayerRefresh {
             val date=today.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
             val url=URL("https://api.aladhan.com/v1/timings/$date?latitude=$lat&longitude=$lon&method=13")
             val connection=(url.openConnection() as java.net.HttpURLConnection).apply { connectTimeout=12000; readTimeout=12000; requestMethod="GET" }
-            if(connection.responseCode !in 200..299) { connection.disconnect(); throw IllegalStateException("Vakit servisi HTTP hatası") }
-            JSONObject(connection.getInputStream().bufferedReader().use { it.readText() }).getJSONObject("data").getJSONObject("timings").also {
-                if(!keys.all { key -> isValidPrayerClock(it.optString(key)) }) throw IllegalStateException("Eksik vakit verisi")
-                prefs.edit().putString(cacheKey,it.toString()).apply()
+            try {
+                if(connection.responseCode !in 200..299) throw IllegalStateException("Vakit servisi HTTP hatası")
+                JSONObject(connection.inputStream.bufferedReader().use { it.readText() })
+                    .getJSONObject("data").getJSONObject("timings").also {
+                        if(!keys.all { key -> isValidPrayerClock(it.optString(key)) }) throw IllegalStateException("Eksik vakit verisi")
+                        prefs.edit().putString(cacheKey,it.toString()).apply()
+                    }
+            } finally {
+                connection.disconnect()
             }
         }
 
