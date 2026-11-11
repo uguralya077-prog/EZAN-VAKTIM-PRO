@@ -310,10 +310,40 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(text("KUR'AN-I KERİM",23f,gold))
                 root.addView(text("Diyanet Kur'an Portalı • Çevrim içi okuma",15f))
                 root.addView(text("Arapça metin ve Türkçe meal için Diyanet'in resmî sitesini uygulama içinde açabilirsiniz. İnternet bağlantısı gereklidir.",14f))
+                root.addView(button("Çevrim dışı kısa sûreler") {
+                    section="Kısa Sûreler"
+                    render()
+                })
                 root.addView(button("Kur'an okuma ekranını aç") {
                     section="Kur'an Oku"
                     render()
                 })
+            }
+            "Kısa Sûreler" -> {
+                root.addView(button("← Kur'an menüsüne dön") { section="Kur'an"; render() })
+                root.addView(text("ÇEVRİM DIŞI KISA SÛRELER",23f,gold))
+                root.addView(text("Arapça metinler cihazda saklanır; internet bağlantısı gerektirmez. Bu bölüm tam Kur'an veya meal veritabanı değildir.",14f))
+                val surahs=listOf(
+                    Triple("Fâtiha • 1. sûre","بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nالْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ\nالرَّحْمَٰنِ الرَّحِيمِ\nمَالِكِ يَوْمِ الدِّينِ\nإِيَّاكَ نَعْبُدُ وَإِيَّاكَ نَسْتَعِينُ\nاهْدِنَا الصِّرَاطَ الْمُسْتَقِيمَ\nصِرَاطَ الَّذِينَ أَنْعَمْتَ عَلَيْهِمْ غَيْرِ الْمَغْضُوبِ عَلَيْهِمْ وَلَا الضَّالِّينَ","7 âyet"),
+                    Triple("İhlâs • 112. sûre","بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nقُلْ هُوَ اللَّهُ أَحَدٌ\nاللَّهُ الصَّمَدُ\nلَمْ يَلِدْ وَلَمْ يُولَدْ\nوَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ","4 âyet"),
+                    Triple("Felak • 113. sûre","بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nقُلْ أَعُوذُ بِرَبِّ الْفَلَقِ\nمِنْ شَرِّ مَا خَلَقَ\nوَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ\nوَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ\nوَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ","5 âyet"),
+                    Triple("Nâs • 114. sûre","بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nقُلْ أَعُوذُ بِرَبِّ النَّاسِ\nمَلِكِ النَّاسِ\nإِلَٰهِ النَّاسِ\nمِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ\nالَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ\nمِنَ الْجِنَّةِ وَالنَّاسِ","6 âyet")
+                )
+                surahs.forEach { (title,arabic,count) ->
+                    root.addView(panel().apply {
+                        addView(text("$title • $count",19f,gold))
+                        addView(text(arabic,25f,white).apply {
+                            gravity=Gravity.RIGHT
+                            textDirection=android.view.View.TEXT_DIRECTION_RTL
+                            setLineSpacing(12f,1.25f)
+                        })
+                        addView(button("Metni kopyala") {
+                            val clipboard=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText(title,arabic))
+                            Toast.makeText(this@MainActivity,"Metin kopyalandı",Toast.LENGTH_SHORT).show()
+                        })
+                    })
+                }
             }
             "Kur'an Oku" -> {
                 root.addView(button("← Kur'an menüsüne dön") { section="Kur'an"; render() })
@@ -325,7 +355,7 @@ class MainActivity : Activity(), SensorEventListener {
                     webViewClient=object:WebViewClient() {
                         override fun shouldOverrideUrlLoading(view:WebView?,request:android.webkit.WebResourceRequest?):Boolean {
                             val url=request?.url ?: return true
-                            return url.scheme!="https" || url.host?.endsWith("diyanet.gov.tr")!=true
+                            return url.scheme!="https" || (url.host!="diyanet.gov.tr" && url.host?.endsWith(".diyanet.gov.tr")!=true)
                         }
                     }
                     loadUrl("https://kuran.diyanet.gov.tr/")
