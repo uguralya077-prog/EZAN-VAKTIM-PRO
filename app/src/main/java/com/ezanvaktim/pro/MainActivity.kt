@@ -624,13 +624,7 @@ class MainActivity : Activity(), SensorEventListener {
                             render()
                         },LinearLayout.LayoutParams(0,-2,1f))
                     })
-                    /* Original simple verse renderer removed in favor of optional translation display. */
-                    for(v in 0 until 0) {
-                        root.addView(text("${verses.getString(v)}  ﴿${v+1}﴾",26f).apply {
-                            gravity=Gravity.RIGHT
-                            textDirection=android.view.View.TEXT_DIRECTION_RTL
-                        })
-                    }
+
                 } catch(_:Exception) { root.addView(text("Sûre açılamadı. Dosyayı yeniden içe aktarın.",16f)) }
             }
             "Kur'an Oku" -> {
