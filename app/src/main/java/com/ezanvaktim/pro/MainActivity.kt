@@ -551,7 +551,37 @@ class MainActivity : Activity(), SensorEventListener {
                 if(!file.exists()) {
                     root.addView(text("Henüz 114 sûre içeren doğrulanmış bir metin dosyası içe aktarılmadı.",16f))
                 } else try {
-                    val items=JSONObject(file.readText(Charsets.UTF_8)).getJSONArray("surahs")
+                    val imported=JSONObject(file.readText(Charsets.UTF_8))
+                    val items=imported.getJSONArray("surahs")
+                    val source=imported.optString("source","").trim()
+                    val translationSource=imported.optString("translation_source","").trim()
+                    var totalVerses=0
+                    var translatedVerses=0
+                    for(i in 0 until items.length()) {
+                        val surah=items.getJSONObject(i)
+                        totalVerses+=surah.getJSONArray("verses").length()
+                        translatedVerses+=surah.optJSONArray("translations")?.length() ?: 0
+                    }
+                    root.addView(text("İçe aktarılan: ${items.length()} sûre • $totalVerses ayet • $translatedVerses meal satırı",14f,accent))
+                    root.addView(text("Arapça kaynak: ${source.ifBlank { "Belirtilmemiş" }}",13f))
+                    root.addView(text("Meal kaynağı: ${translationSource.ifBlank { "Belirtilmemiş" }}",13f))
+                    root.addView(button("★ İşaretlediğim sûreler") {
+                        val marks=(0 until items.length()).filter { prefs.getInt("quran_bookmark_$it",-1)>=0 }
+                        if(marks.isEmpty()) {
+                            Toast.makeText(this,"Henüz işaretlenmiş ayet yok",Toast.LENGTH_SHORT).show()
+                        } else {
+                            val labels=marks.map {
+                                "${it+1}. ${items.getJSONObject(it).getString("name")} • Ayet ${prefs.getInt("quran_bookmark_$it",-1)+1}"
+                            }.toTypedArray()
+                            android.app.AlertDialog.Builder(this)
+                                .setTitle("İşaretlediğim ayetler")
+                                .setItems(labels) { _, which ->
+                                    prefs.edit().putInt("quran_import_last",marks[which]).apply()
+                                    section="İçe Aktarılan Sûre"
+                                    render()
+                                }.setNegativeButton("Kapat",null).show()
+                        }
+                    })
                     val filter=EditText(this).apply { hint="Sûre adı veya numarası ara"; setTextColor(white); setHintTextColor(accent) }
                     root.addView(filter)
                     val results=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
