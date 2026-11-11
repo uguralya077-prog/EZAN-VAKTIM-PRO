@@ -27,8 +27,20 @@ jobs:
         run: gradle --no-daemon :app:assembleDebug --stacktrace
       - name: Verify APK output
         run: test -s app/build/outputs/apk/debug/app-debug.apk
-      - name: Upload APK
+      - name: Upload APK (first attempt)
+        id: upload_apk
+        continue-on-error: true
         uses: actions/upload-artifact@v4
         with:
-          name: EZAN-VAKTIM-PRO-APK
+          name: EZAN-VAKTIM-PRO-1.0.0-APK
           path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
+      - name: Retry APK upload if needed
+        if: steps.upload_apk.outcome == 'failure'
+        uses: actions/upload-artifact@v4
+        with:
+          name: EZAN-VAKTIM-PRO-1.0.0-APK-RETRY
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 7
