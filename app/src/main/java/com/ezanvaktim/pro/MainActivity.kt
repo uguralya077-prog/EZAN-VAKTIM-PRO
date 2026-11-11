@@ -637,8 +637,16 @@ class MainActivity : Activity(), SensorEventListener {
                     surahs.filter { it.first.contains(query,true) && (!onlySurahFavorites.isChecked || surahFavorites.contains(it.first)) }.forEach { (title,arabic,count) ->
                         surahList.addView(panel().apply {
                             addView(text("$title • $count",19f,gold))
-                            addView(button("▶ Sûreyi sesli oku (Arapça)") { readAloud(arabic) })
-                            addView(button("■ Sesli okumayı durdur") { stopReading() })
+                            addView(button("▶ Gerçek hafızdan sûreyi dinle") {
+                                val number=when {
+                                    title.startsWith("Fâtiha") -> 1
+                                    title.startsWith("İhlâs") -> 112
+                                    title.startsWith("Felak") -> 113
+                                    else -> 114
+                                }
+                                playTilavet(number)
+                            })
+                            addView(button("■ Tilaveti durdur") { stopTilavet() })
                             addView(text(arabic,surahFont.toFloat(),white).apply {
                                 gravity=Gravity.RIGHT
                                 textDirection=android.view.View.TEXT_DIRECTION_RTL
