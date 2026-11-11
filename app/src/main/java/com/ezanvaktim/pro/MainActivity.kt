@@ -45,6 +45,8 @@ class MainActivity : Activity(), SensorEventListener {
     private val green = Color.rgb(13,39,30)
     private val pickFull = 101
     private val pickShort = 102
+    private var section = "Vakitler"
+    private var zikrCount = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,25 +67,110 @@ class MainActivity : Activity(), SensorEventListener {
         text=label; setTextColor(white); setBackgroundColor(green); setOnClickListener { click() }
     }
     private fun render() {
-        val scroll = ScrollView(this).apply { setBackgroundColor(Color.rgb(7,19,15)) }
-        root = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL; setPadding(18,30,18,24) }
-        scroll.addView(root); setContentView(scroll)
-        root.addView(text("☪  EZAN VAKTİM PRO",27f,gold).apply { setTypeface(null,Typeface.BOLD); gravity=Gravity.CENTER })
-        heading = text(locationLabel,16f,gold).apply { gravity=Gravity.CENTER }; root.addView(heading)
-        root.addView(button("📍 Konumumu kullan") { locate() })
-        root.addView(text("GÜNLÜK NAMAZ VAKİTLERİ",20f,gold))
-        timesBox = LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }; root.addView(timesBox)
-        root.addView(text("KIBLE PUSULASI",20f,gold))
-        compass = text("Pusula sensörü bekleniyor",22f,gold).apply { gravity=Gravity.CENTER; minHeight=150 }; root.addView(compass)
-        root.addView(text("EZAN SESİ",20f,gold))
-        val modes = arrayOf("Tam ezan", "Kısa ezan", "Sessiz bildirim")
-        val spinner = Spinner(this).apply { adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,modes); setSelection(prefs.getInt("mode",2)) }
-        root.addView(spinner)
-        root.addView(button("Seçimi kaydet") { prefs.edit().putInt("mode",spinner.selectedItemPosition).apply(); Toast.makeText(this,"Ezan modu kaydedildi",Toast.LENGTH_SHORT).show() })
-        root.addView(button("Tam ezan ses dosyası seç") { pickAudio(pickFull) })
-        root.addView(button("Kısa ezan ses dosyası seç") { pickAudio(pickShort) })
-        root.addView(button("Vakitleri yenile") { loadTimes() })
-        root.addView(text("Vakit kaynağı: AlAdhan hesaplama servisi (Diyanet'in resmî yayını değildir). Konum izni verilmezse örnek şehir kullanılır. Pusulayı metalden uzak tutun.",13f,Color.LTGRAY))
+        val outer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(7,19,15)) }
+        val header = text("☪  EZAN VAKTİM PRO", 25f, gold).apply {
+            gravity = Gravity.CENTER; setTypeface(null, Typeface.BOLD)
+        }
+        outer.addView(header)
+        val scroll = ScrollView(this)
+        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(16,12,16,20) }
+        scroll.addView(root)
+        outer.addView(scroll, LinearLayout.LayoutParams(-1,0,1f))
+        val navigation = HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false }
+        val tabs = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        listOf("Vakitler","Kıble","Ezan","Kur'an","Dualar","Zikir","99 İsim").forEach { tab ->
+            tabs.addView(button(tab) { section=tab; render() }.apply {
+                setTextColor(if(section==tab) gold else white)
+                setPadding(12,12,12,12)
+            })
+        }
+        navigation.addView(tabs); outer.addView(navigation)
+        setContentView(outer)
+        when(section) {
+            "Vakitler" -> {
+                heading=text(locationLabel,17f,gold).apply { gravity=Gravity.CENTER }
+                root.addView(heading)
+                root.addView(button("📍 Konumumu kullan") { locate() })
+                root.addView(text("GÜNLÜK NAMAZ VAKİTLERİ",21f,gold))
+                timesBox=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
+                root.addView(timesBox)
+                root.addView(button("Vakitleri yenile") { loadTimes() })
+                root.addView(text("Kaynak: AlAdhan hesaplama servisi; Diyanet'in resmî verisi değildir.",12f,Color.LTGRAY))
+                loadTimes()
+            }
+            "Kıble" -> {
+                root.addView(text("KIBLE PUSULASI",23f,gold))
+                compass=text("Telefonu düz tutun. Sensör bekleniyor…",22f,gold).apply {
+                    gravity=Gravity.CENTER; minHeight=280
+                }
+                root.addView(compass)
+                root.addView(text("Manyetik alan ve metal eşyalar pusula doğruluğunu etkileyebilir.",15f))
+            }
+            "Ezan" -> {
+                root.addView(text("EZAN VE BİLDİRİMLER",22f,gold))
+                val modes=arrayOf("Tam ezan","Kısa ezan","Sessiz bildirim")
+                val spinner=Spinner(this).apply {
+                    adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,modes)
+                    setSelection(prefs.getInt("mode",2))
+                }
+                root.addView(spinner)
+                root.addView(button("Seçimi kaydet") {
+                    prefs.edit().putInt("mode",spinner.selectedItemPosition).apply()
+                    Toast.makeText(this,"Ezan modu kaydedildi",Toast.LENGTH_SHORT).show()
+                })
+                root.addView(button("Tam ezan dosyası seç") { pickAudio(pickFull) })
+                root.addView(button("Kısa ezan dosyası seç") { pickAudio(pickShort) })
+                root.addView(text("Ses çalmak için cihazınızdan bir ezan kaydı seçin. Namaz vakti bildirimleri Android izinlerine bağlıdır.",14f))
+            }
+            "Kur'an" -> {
+                root.addView(text("KUR'AN-I KERİM",23f,gold))
+                root.addView(text("Kur'an okuma ve Türkçe meal bağlantıları",17f))
+                root.addView(button("Kur'an-ı Kerim'i aç") {
+                    startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://kuran.diyanet.gov.tr/")))
+                })
+                root.addView(text("Bu bölüm şimdilik Diyanet'in çevrim içi Kur'an sayfasını açar. Uygulama içi tam metin ve sesli okuma sonraki geliştirme aşamasındadır.",14f))
+            }
+            "Dualar" -> {
+                root.addView(text("GÜNLÜK DUALAR",23f,gold))
+                listOf(
+                    "Yemekten önce" to "Bismillâhirrahmânirrahîm.",
+                    "Yemekten sonra" to "Elhamdülillâh.",
+                    "Bağışlanma" to "Estağfirullâhel azîm ve etûbü ileyh.",
+                    "Günlük zikir" to "Sübhânallâh • Elhamdülillâh • Allâhu ekber"
+                ).forEach { (title,body) ->
+                    root.addView(text(title,19f,gold))
+                    root.addView(text(body,17f))
+                }
+                root.addView(text("Bu başlangıç listesidir; kapsamlı ve kaynaklı dua kataloğu henüz eklenmedi.",13f))
+            }
+            "Zikir" -> {
+                zikrCount=prefs.getInt("zikr_count",0)
+                root.addView(text("ZİKİR SAYACI",23f,gold))
+                val counter=text("$zikrCount",52f,gold).apply { gravity=Gravity.CENTER }
+                root.addView(counter)
+                root.addView(button("TESBİH +1") {
+                    zikrCount++
+                    prefs.edit().putInt("zikr_count",zikrCount).apply()
+                    counter.text="$zikrCount"
+                })
+                root.addView(button("Sayacı sıfırla") {
+                    zikrCount=0; prefs.edit().putInt("zikr_count",0).apply(); counter.text="0"
+                })
+            }
+            "99 İsim" -> {
+                root.addView(text("ALLAH'IN GÜZEL İSİMLERİ",22f,gold))
+                listOf(
+                    "Er-Rahmân — Sonsuz merhamet sahibi",
+                    "Er-Rahîm — Çok merhametli",
+                    "El-Melik — Mutlak hükümran",
+                    "El-Kuddûs — Her türlü eksiklikten uzak",
+                    "Es-Selâm — Esenlik kaynağı",
+                    "El-Mü'min — Güven veren",
+                    "El-Müheymin — Gözetip koruyan"
+                ).forEach { root.addView(text(it,17f)) }
+                root.addView(text("Şimdilik örnek isimler yer alıyor; 99 ismin tamamı ve açıklamaları henüz eklenmedi.",13f))
+            }
+        }
     }
     private fun pickAudio(code:Int) { startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply { type="audio/*"; addCategory(Intent.CATEGORY_OPENABLE) },code) }
     @Deprecated("Activity result API compatibility")
@@ -152,7 +239,7 @@ class MainActivity : Activity(), SensorEventListener {
         super.onResume()
         sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.also { sensorManager.registerListener(this,it,SensorManager.SENSOR_DELAY_UI) }
         sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)?.also { sensorManager.registerListener(this,it,SensorManager.SENSOR_DELAY_UI) }
-        if(sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)==null) compass.text="Bu cihazda pusula sensörü bulunamadı"
+        if(section=="Kıble" && sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)==null) compass.text="Bu cihazda pusula sensörü bulunamadı"
     }
     override fun onPause() { sensorManager.unregisterListener(this); super.onPause() }
     override fun onSensorChanged(event:SensorEvent) {
@@ -167,6 +254,7 @@ class MainActivity : Activity(), SensorEventListener {
         val lat2=Math.toRadians(21.4225)
         bearing=(Math.toDegrees(atan2(sin(lonDiff),cos(lat1)*tan(lat2)-sin(lat1)*cos(lonDiff)))+360)%360
         val relative=(bearing-azimuth+360)%360
+        if(section!="Kıble") return
         compass.text="🕋\nKıble: %.1f° (gerçek kuzey)\nPusula yönü: %.1f° (manyetik)\nKıbleye dönüş: %.1f° sağa".format(Locale.getDefault(),bearing,azimuth,relative)
     }
     override fun onAccuracyChanged(sensor:Sensor?,accuracy:Int) {}
