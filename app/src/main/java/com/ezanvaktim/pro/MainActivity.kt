@@ -450,6 +450,12 @@ class MainActivity : Activity(), SensorEventListener {
                         addCategory(Intent.CATEGORY_OPENABLE)
                     },pickQuran)
                 })
+                root.addView(button("Çevrim dışı son okunan sûreye git") {
+                    if(java.io.File(filesDir,"quran_import.json").exists()) {
+                        section="İçe Aktarılan Sûre"
+                        render()
+                    } else Toast.makeText(this,"Önce 114 sûre dosyasını içe aktarın",Toast.LENGTH_LONG).show()
+                })
                 root.addView(button("İçe aktarılan çevrim dışı Kur'anı oku") {
                     section="İçe Aktarılan Kur'an"
                     render()
