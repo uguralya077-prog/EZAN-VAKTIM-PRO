@@ -148,7 +148,23 @@ class MainActivity : Activity(), SensorEventListener {
             },LinearLayout.LayoutParams(0,-2,1f))
         }
         outer.addView(tabs)
+        // Android 15+ enforces edge-to-edge for targetSdk 35.
+        // Reserve the actual status/navigation bar insets so no tab sits under system buttons.
+        outer.setOnApplyWindowInsetsListener { view, insets ->
+            val bars=if(Build.VERSION.SDK_INT>=30) {
+                insets.getInsets(android.view.WindowInsets.Type.systemBars() or android.view.WindowInsets.Type.displayCutout())
+            } else {
+                @Suppress("DEPRECATION")
+                val bottom=insets.systemWindowInsetBottom
+                @Suppress("DEPRECATION")
+                val top=insets.systemWindowInsetTop
+                android.graphics.Insets.of(0,top,0,bottom)
+            }
+            view.setPadding(bars.left,bars.top,bars.right,bars.bottom)
+            insets
+        }
         setContentView(outer)
+        outer.requestApplyInsets()
         when(section) {
             "Menüler" -> {
                 root.addView(text("TÜM MENÜLER",24f,gold))
@@ -180,6 +196,14 @@ class MainActivity : Activity(), SensorEventListener {
                 }
             }
             "Vakitler" -> {
+                val quick=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
+                listOf("📖 Kur'an" to "Kur'an","🤲 Dualar" to "Dualar","☪ 99 İsim" to "99 İsim").forEach { (label,target) ->
+                    quick.addView(button(label) { section=target; render() }.apply {
+                        textSize=12f
+                        setPadding(2,8,2,8)
+                    },LinearLayout.LayoutParams(0,-2,1f))
+                }
+                root.addView(quick)
                 heading=text(locationLabel,17f,gold).apply { gravity=Gravity.CENTER }
                 root.addView(heading)
                 root.addView(text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy",Locale("tr","TR"))),17f,white).apply { gravity=Gravity.CENTER })
