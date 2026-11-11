@@ -453,12 +453,20 @@ class MainActivity : Activity(), SensorEventListener {
             }
             "Kur'an Oku" -> {
                 root.addView(button("← Kur'an menüsüne dön") { section="Kur'an"; render() })
+                val webStatus=text("Diyanet Kur’an sayfası yükleniyor…",14f,accent)
+                root.addView(webStatus)
                 val browser=WebView(this).apply {
                     settings.javaScriptEnabled=true
                     settings.domStorageEnabled=true
                     settings.allowFileAccess=false
                     settings.allowContentAccess=false
                     webViewClient=object:WebViewClient() {
+                        override fun onPageFinished(view:WebView?,url:String?) {
+                            webStatus.text="Diyanet Kur’an portalı • Çevrim içi"
+                        }
+                        override fun onReceivedError(view:WebView?,request:android.webkit.WebResourceRequest?,error:android.webkit.WebResourceError?) {
+                            if(request?.isForMainFrame==true) webStatus.text="Sayfa yüklenemedi. İnternet bağlantısını kontrol edip yeniden deneyin."
+                        }
                         override fun shouldOverrideUrlLoading(view:WebView?,request:android.webkit.WebResourceRequest?):Boolean {
                             val url=request?.url ?: return true
                             return url.scheme!="https" || (url.host!="diyanet.gov.tr" && url.host?.endsWith(".diyanet.gov.tr")!=true)
@@ -466,6 +474,10 @@ class MainActivity : Activity(), SensorEventListener {
                     }
                     loadUrl("https://kuran.diyanet.gov.tr/")
                 }
+                root.addView(button("Sayfayı yeniden yükle") { webStatus.text="Sayfa yükleniyor…"; browser.reload() })
+                root.addView(button("Diyanet sitesini tarayıcıda aç") {
+                    startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://kuran.diyanet.gov.tr/")))
+                })
                 root.addView(browser,LinearLayout.LayoutParams(-1,resources.displayMetrics.heightPixels*2/3))
                 root.addView(text("Görüntülenen içerik Diyanet'in çevrim içi hizmetidir; uygulamanın yerel çevrim dışı Kur'an veritabanı henüz bulunmuyor.",13f))
             }
