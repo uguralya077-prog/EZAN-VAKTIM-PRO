@@ -340,6 +340,25 @@ class MainActivity : Activity(), SensorEventListener {
                     addView(text(status,14f,white))
                     addView(text("Bağlantı kesilirse yenileme 30 dakika sonra tekrar denenecek.",14f))
                 })
+                val syncStatus=text("Güncelleme için internet bağlantısı gerekir.",14f,accent)
+                root.addView(syncStatus)
+                root.addView(button("Namaz vakitlerini ve alarmları şimdi yenile") {
+                    syncStatus.text="Namaz vakitleri güncelleniyor…"
+                    thread {
+                        try {
+                            PrayerRefresh.refresh(applicationContext)
+                            runOnUiThread {
+                                syncStatus.text="Namaz vakitleri, alarmlar ve widget güncellendi."
+                                Toast.makeText(this,"Güncelleme başarılı",Toast.LENGTH_SHORT).show()
+                            }
+                        } catch(_:Exception) {
+                            try { AlarmScheduler.scheduleRefreshRetry(applicationContext) } catch(_:Exception) { }
+                            runOnUiThread {
+                                syncStatus.text="Güncelleme başarısız. İnterneti kontrol edin; otomatik yeniden deneme planlandı."
+                            }
+                        }
+                    }
+                })
                 root.addView(button("Alarm ve bildirim ayarları") { section="Ezan"; render() })
                 root.addView(button("Widget ayarları") { section="Widget"; render() })
                 root.addView(text("Not: Telefonun pil tasarrufu ve bildirim izinleri ezan uyarılarının zamanında çalışmasını etkileyebilir.",14f))
