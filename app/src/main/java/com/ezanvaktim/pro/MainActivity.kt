@@ -137,7 +137,8 @@ class MainActivity : Activity(), SensorEventListener {
                     "Kur'an-ı Kerim" to "Kur'an",
                     "Günlük Dualar" to "Dualar",
                     "Dijital Tesbih" to "Zikir",
-                    "Allah'ın 99 İsmi" to "99 İsim"
+                    "Allah'ın 99 İsmi" to "99 İsim",
+                    "Ana Ekran Widget'ı" to "Widget"
                 )
                 items.chunked(2).forEach { pair ->
                     val line=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
@@ -251,6 +252,22 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(button("■ Dinlemeyi durdur") { stopAudioPreview() })
                 root.addView(text("Ön izleme yalnızca seçtiğiniz yerel ses dosyasını çalar; alarmı başlatmaz.",13f))
                 root.addView(text("Ses çalmak için cihazınızdan bir ezan kaydı seçin. Namaz vakti bildirimleri Android izinlerine bağlıdır.",14f))
+            }
+            "Widget" -> {
+                root.addView(text("ANA EKRAN NAMAZ VAKTİ WIDGET'I",23f,gold))
+                root.addView(text("Telefonunuzun ana ekranında sonraki namaz vaktini gösterir.",16f))
+                root.addView(panel().apply {
+                    addView(text("Widget nasıl eklenir?",19f,gold))
+                    addView(text("1. Telefonunuzun ana ekranında boş bir alana uzun basın.",16f))
+                    addView(text("2. Widget'lar bölümünü açın.",16f))
+                    addView(text("3. Ezan Vaktim Pro widget'ını seçerek ana ekrana ekleyin.",16f))
+                    addView(text("4. Namaz vakitleri için uygulamada konumunuzu belirleyin.",16f))
+                })
+                root.addView(button("Widget verisini şimdi yenile") {
+                    PrayerWidget.refreshAll(this)
+                    Toast.makeText(this,"Widget bilgileri güncellendi",Toast.LENGTH_SHORT).show()
+                })
+                root.addView(text("Widget Android tarafından yaklaşık 30 dakikada bir ve vakit verisi yenilendiğinde güncellenir. Saatlik geri sayım yerine sonraki vaktin saati gösterilir.",14f))
             }
             "Kur'an" -> {
                 root.addView(text("KUR'AN-I KERİM",23f,gold))
