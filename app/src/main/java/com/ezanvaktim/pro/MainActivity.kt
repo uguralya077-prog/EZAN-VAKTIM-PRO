@@ -974,6 +974,12 @@ object AlarmScheduler {
             catch(_:SecurityException) { manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,epoch,pending) }
         }
     }
+    fun scheduleRefreshRetry(context:Context) {
+        val manager=context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val retryAt=System.currentTimeMillis()+30L*60L*1000L
+        val pending=PendingIntent.getBroadcast(context,500,Intent(context,RefreshReceiver::class.java).setAction(REFRESH_ACTION),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,retryAt,pending)
+    }
     fun scheduleRefresh(context:Context) {
         val manager=context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val next=LocalDate.now().plusDays(1).atTime(0,5).atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
@@ -995,6 +1001,7 @@ object PrayerRefresh {
             } catch(_:Exception) { null }
         }
         AlarmScheduler.schedule(context,schedule)
+        AlarmScheduler.scheduleRefresh(context)
         PrayerWidget.refreshAll(context)
     }
     fun refresh(context:Context) {
@@ -1029,7 +1036,7 @@ class RefreshReceiver: android.content.BroadcastReceiver() {
         val pending=goAsync()
         thread {
             try { PrayerRefresh.refresh(context.applicationContext) }
-            catch(_:Exception) { AlarmScheduler.scheduleRefresh(context.applicationContext) }
+            catch(_:Exception) { AlarmScheduler.scheduleRefreshRetry(context.applicationContext) }
             finally { pending.finish() }
         }
     }
