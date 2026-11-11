@@ -584,6 +584,23 @@ class MainActivity : Activity(), SensorEventListener {
                     val index=prefs.getInt("quran_import_last",0).coerceIn(0,113)
                     val surah=items.getJSONObject(index)
                     root.addView(text("${index+1}. ${surah.getString("name")}",23f,gold))
+                    root.addView(button("Sûre metnini paylaş") {
+                        val versesForShare=surah.getJSONArray("verses")
+                        val mealForShare=surah.optJSONArray("translations")
+                        val out=StringBuilder("${index+1}. ${surah.getString("name")}\n\n")
+                        for(v in 0 until versesForShare.length()) {
+                            out.append("${v+1}. ").append(versesForShare.getString(v)).append('\n')
+                            if(mealForShare!=null && prefs.getBoolean("quran_show_translation",true)) {
+                                out.append(mealForShare.getString(v)).append("\n")
+                            }
+                            out.append('\n')
+                        }
+                        startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                            type="text/plain"
+                            putExtra(Intent.EXTRA_TEXT,out.toString())
+                        },"Sûreyi paylaş"))
+                    })
+
                     val verses=surah.getJSONArray("verses")
                     val translations=surah.optJSONArray("translations")
                     val mealToggle=CheckBox(this).apply {
