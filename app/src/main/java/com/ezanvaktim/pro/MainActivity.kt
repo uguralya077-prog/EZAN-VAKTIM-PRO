@@ -260,6 +260,8 @@ class MainActivity : Activity(), SensorEventListener {
             }
             "Ezan" -> {
                 root.addView(text("EZAN VE BİLDİRİMLER",22f,gold))
+                root.addView(text("Ezan sesi hazır gelmez: Tam veya kısa ezan için telefonunuzdan ses dosyası seçin. Dosya seçilmezse bildirim gösterilir, ezan sesi çalınmaz.",14f))
+                root.addView(button("Uygulama aktif / kapalı ayarına git") { section="Ayarlar"; render() })
                 val modes=arrayOf("Tam ezan","Kısa ezan","Sessiz bildirim")
                 val spinner=Spinner(this).apply {
                     adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,modes)
@@ -377,6 +379,27 @@ class MainActivity : Activity(), SensorEventListener {
             }
             "Ayarlar" -> {
                 root.addView(text("GÖRÜNÜM VE AYARLAR",23f,gold))
+                root.addView(panel().apply {
+                    addView(text("Uygulama ve ezan uyarıları",19f,gold))
+                    addView(text("Kapalıyken vakitleri ve duaları açıp okuyabilirsiniz; yalnızca otomatik ezan alarmları devre dışı kalır.",14f))
+                    addView(CheckBox(this@MainActivity).apply {
+                        text="Ezan Vaktim Pro otomatik uyarıları aktif"
+                        setTextColor(white)
+                        isChecked=prefs.getBoolean("app_active",true)
+                        setOnCheckedChangeListener { _,enabled ->
+                            prefs.edit().putBoolean("app_active",enabled).apply()
+                            if(!enabled) {
+                                AlarmScheduler.cancelPrayerAlarms(this@MainActivity)
+                                stopService(Intent(this@MainActivity,AdhanService::class.java))
+                                stopAudioPreview()
+                            } else {
+                                PrayerRefresh.refreshFromCache(this@MainActivity)
+                            }
+                            Toast.makeText(this@MainActivity,if(enabled) "Ezan uyarıları açıldı" else "Ezan uyarıları kapatıldı",Toast.LENGTH_SHORT).show()
+                        }
+                    })
+                })
+
                 root.addView(text("Yazı boyutu",19f,gold))
                 val sizes=listOf("Küçük" to 0.90f,"Normal" to 1.0f,"Büyük" to 1.15f,"Çok büyük" to 1.30f)
                 val sizeSpinner=Spinner(this).apply {
@@ -1511,6 +1534,15 @@ class QiblaDial(context:Context):android.view.View(context) {
 
 object AlarmScheduler {
     private val prayerIds=mapOf("İmsak" to 10,"Öğle" to 11,"İkindi" to 12,"Akşam" to 13,"Yatsı" to 14)
+    fun cancelPrayerAlarms(context:Context) {
+        val manager=context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val flags=PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        for((name,id) in prayerIds) {
+            val pending=PendingIntent.getBroadcast(context,id,Intent(context,AlarmReceiver::class.java).putExtra("name",name),flags)
+            manager.cancel(pending)
+            pending.cancel()
+        }
+    }
     fun schedule(context:Context, times:List<Pair<String,LocalDateTime>>) {
         val manager=context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val flags=PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
@@ -1523,6 +1555,7 @@ object AlarmScheduler {
             }
             prefs.edit().putBoolean("alarm_id_migrated_v2",true).apply()
         }
+        if(!prefs.getBoolean("app_active",true)) { cancelPrayerAlarms(context); return }
         val byName=times.toMap()
         for((name,id) in prayerIds) {
             val intent=Intent(context,AlarmReceiver::class.java).putExtra("name",name)
@@ -1657,7 +1690,7 @@ class AlarmReceiver: android.content.BroadcastReceiver() {
         PrayerWidget.refreshAll(context)
         val name=intent.getStringExtra("name") ?: "Namaz"
         val prefs=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
-        if(!prefs.getBoolean("alarm_$name",true)) return
+        if(!prefs.getBoolean("app_active",true) || !prefs.getBoolean("alarm_$name",true)) return
         val mode=prefs.getInt("mode",2)
         val key=if(mode==0) "full" else "short"
         val audio=prefs.getString(key,null)
