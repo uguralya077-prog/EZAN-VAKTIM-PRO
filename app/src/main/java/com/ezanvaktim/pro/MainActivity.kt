@@ -649,6 +649,10 @@ class MainActivity : Activity(), SensorEventListener {
                     }
                     if(translations!=null) root.addView(mealToggle)
                     else root.addView(text("Bu dosyada Türkçe meal bulunmuyor.",14f))
+                    var arabicSize=prefs.getFloat("quran_import_arabic_size",26f).coerceIn(18f,42f)
+                    var translationSize=prefs.getFloat("quran_import_translation_size",16f).coerceIn(12f,28f)
+                    val fontControls=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
+                    root.addView(fontControls)
                     val verseContainer=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
                     root.addView(verseContainer)
                     val verseViews=ArrayList<TextView>()
@@ -668,7 +672,7 @@ class MainActivity : Activity(), SensorEventListener {
                         verseContainer.removeAllViews()
                         verseViews.clear()
                         for(v in 0 until verses.length()) {
-                            val verseText=text("${if(prefs.getInt("quran_bookmark_${index}",-1)==v) "★ " else ""}${verses.getString(v)}  ﴿${v+1}﴾",26f).apply {
+                            val verseText=text("${if(prefs.getInt("quran_bookmark_${index}",-1)==v) "★ " else ""}${verses.getString(v)}  ﴿${v+1}﴾",arabicSize).apply {
                                 gravity=Gravity.RIGHT
                                 textDirection=android.view.View.TEXT_DIRECTION_RTL
                                 setOnClickListener {
@@ -688,9 +692,31 @@ class MainActivity : Activity(), SensorEventListener {
                             verseViews.add(verseText)
                             verseContainer.addView(verseText)
                             if(mealToggle.isChecked && translations!=null) {
-                                verseContainer.addView(text("${v+1}. ${translations.getString(v)}",16f,accent))
+                                verseContainer.addView(text("${v+1}. ${translations.getString(v)}",translationSize,accent))
                             }
                         }
+                    }
+                    fontControls.addView(button("A−") {
+                        arabicSize=(arabicSize-2f).coerceAtLeast(18f)
+                        prefs.edit().putFloat("quran_import_arabic_size",arabicSize).apply()
+                        drawVerses()
+                    },LinearLayout.LayoutParams(0,-2,1f))
+                    fontControls.addView(button("A+") {
+                        arabicSize=(arabicSize+2f).coerceAtMost(42f)
+                        prefs.edit().putFloat("quran_import_arabic_size",arabicSize).apply()
+                        drawVerses()
+                    },LinearLayout.LayoutParams(0,-2,1f))
+                    if(translations!=null) {
+                        fontControls.addView(button("Meal −") {
+                            translationSize=(translationSize-2f).coerceAtLeast(12f)
+                            prefs.edit().putFloat("quran_import_translation_size",translationSize).apply()
+                            drawVerses()
+                        },LinearLayout.LayoutParams(0,-2,1f))
+                        fontControls.addView(button("Meal +") {
+                            translationSize=(translationSize+2f).coerceAtMost(28f)
+                            prefs.edit().putFloat("quran_import_translation_size",translationSize).apply()
+                            drawVerses()
+                        },LinearLayout.LayoutParams(0,-2,1f))
                     }
                     mealToggle.setOnCheckedChangeListener { _, checked ->
                         prefs.edit().putBoolean("quran_show_translation",checked).apply()
