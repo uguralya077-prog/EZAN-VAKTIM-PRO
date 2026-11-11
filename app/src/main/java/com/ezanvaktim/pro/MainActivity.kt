@@ -52,6 +52,7 @@ class MainActivity : Activity(), SensorEventListener {
     private val green = Color.rgb(13,39,30)
     private val pickFull = 101
     private val pickShort = 102
+    private val pickQuran = 103
     private var section = "Vakitler"
     private var zikrCount = 0
     private val timerHandler=Handler(Looper.getMainLooper())
@@ -443,6 +444,17 @@ class MainActivity : Activity(), SensorEventListener {
                     section="Kısa Sûreler"
                     render()
                 })
+                root.addView(button("114 sûre çevrim dışı metin dosyası içe aktar") {
+                    startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                        type="application/json"
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                    },pickQuran)
+                })
+                root.addView(button("İçe aktarılan çevrim dışı Kur'anı oku") {
+                    section="İçe Aktarılan Kur'an"
+                    render()
+                })
+                root.addView(text("İçe aktarma için UTF-8 JSON dosyasında 'surahs' dizisi bulunmalı; 114 sûre sırayla 'name' ve 'verses' alanlarını içermelidir. Her 'verses' öğesi Arapça ayet metnidir. Kaynak metnin doğruluğu ve kullanım izni dosyayı sağlayana aittir.",13f))
                 root.addView(button("Kur'an okuma ekranını aç") {
                     section="Kur'an Oku"
                     render()
@@ -525,6 +537,55 @@ class MainActivity : Activity(), SensorEventListener {
                     override fun afterTextChanged(s:android.text.Editable?) {}
                 })
                 showSurahs("")
+            }
+            "İçe Aktarılan Kur'an" -> {
+                root.addView(button("← Kur'an menüsüne dön") { section="Kur'an"; render() })
+                root.addView(text("ÇEVRİM DIŞI KUR'AN OKUYUCU",23f,gold))
+                val file=java.io.File(filesDir,"quran_import.json")
+                if(!file.exists()) {
+                    root.addView(text("Henüz 114 sûre içeren doğrulanmış bir metin dosyası içe aktarılmadı.",16f))
+                } else try {
+                    val items=JSONObject(file.readText(Charsets.UTF_8)).getJSONArray("surahs")
+                    val filter=EditText(this).apply { hint="Sûre adı veya numarası ara"; setTextColor(white); setHintTextColor(accent) }
+                    root.addView(filter)
+                    val results=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
+                    root.addView(results)
+                    fun show(query:String) {
+                        results.removeAllViews()
+                        for(index in 0 until items.length()) {
+                            val surah=items.getJSONObject(index)
+                            val title="${index+1}. ${surah.getString("name")}"
+                            if(query.isNotBlank() && !title.contains(query,true)) continue
+                            results.addView(button(title) {
+                                section="İçe Aktarılan Sûre"
+                                prefs.edit().putInt("quran_import_last",index).apply()
+                                render()
+                            })
+                        }
+                    }
+                    filter.addTextChangedListener(object:android.text.TextWatcher {
+                        override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int) {}
+                        override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int) { show(s?.toString() ?: "") }
+                        override fun afterTextChanged(s:android.text.Editable?) {}
+                    })
+                    show("")
+                } catch(_:Exception) { root.addView(text("Dosya okunamadı. Yeniden içe aktarın.",16f)) }
+            }
+            "İçe Aktarılan Sûre" -> {
+                root.addView(button("← Sûre listesine dön") { section="İçe Aktarılan Kur'an"; render() })
+                try {
+                    val items=JSONObject(java.io.File(filesDir,"quran_import.json").readText(Charsets.UTF_8)).getJSONArray("surahs")
+                    val index=prefs.getInt("quran_import_last",0).coerceIn(0,113)
+                    val surah=items.getJSONObject(index)
+                    root.addView(text("${index+1}. ${surah.getString("name")}",23f,gold))
+                    val verses=surah.getJSONArray("verses")
+                    for(v in 0 until verses.length()) {
+                        root.addView(text("${verses.getString(v)}  ﴿${v+1}﴾",26f).apply {
+                            gravity=Gravity.RIGHT
+                            textDirection=android.view.View.TEXT_DIRECTION_RTL
+                        })
+                    }
+                } catch(_:Exception) { root.addView(text("Sûre açılamadı. Dosyayı yeniden içe aktarın.",16f)) }
             }
             "Kur'an Oku" -> {
                 root.addView(button("← Kur'an menüsüne dön") { section="Kur'an"; render() })
@@ -909,6 +970,47 @@ class MainActivity : Activity(), SensorEventListener {
     @Deprecated("Activity result API compatibility")
     override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?) {
         super.onActivityResult(requestCode,resultCode,data)
+        if(resultCode==RESULT_OK && requestCode==pickQuran && data?.data!=null) {
+            try {
+                val bytes=contentResolver.openInputStream(data.data!!)?.use { stream ->
+                    val output=java.io.ByteArrayOutputStream()
+                    val buffer=ByteArray(8192)
+                    while(true) {
+                        val n=stream.read(buffer)
+                        if(n<0) break
+                        if(output.size()+n>8*1024*1024) throw IllegalArgumentException("Dosya 8 MB sınırını aşıyor")
+                        output.write(buffer,0,n)
+                    }
+                    output.toByteArray()
+                } ?: throw IllegalArgumentException("Dosya açılamadı")
+                val raw=bytes.toString(Charsets.UTF_8)
+                val surahs=JSONObject(raw).getJSONArray("surahs")
+                if(surahs.length()!=114) throw IllegalArgumentException("Tam 114 sûre gerekli")
+                for(i in 0 until 114) {
+                    val surah=surahs.getJSONObject(i)
+                    if(surah.getString("name").isBlank()) throw IllegalArgumentException("Boş sûre adı")
+                    val verses=surah.getJSONArray("verses")
+                    if(verses.length()<1 || verses.length()>300) throw IllegalArgumentException("Geçersiz ayet sayısı")
+                    for(j in 0 until verses.length()) {
+                        val verse=verses.getString(j)
+                        if(verse.isBlank() || verse.length>3000 || !verse.any { it in '\\u0600'..'\\u06FF' }) throw IllegalArgumentException("Arapça ayet metni geçersiz")
+                    }
+                }
+                val file=java.io.File(filesDir,"quran_import.json")
+                val temp=java.io.File(filesDir,"quran_import.tmp")
+                temp.writeText(raw,Charsets.UTF_8)
+                if(!temp.renameTo(file)) {
+                    temp.copyTo(file,overwrite=true)
+                    temp.delete()
+                }
+                Toast.makeText(this,"114 sûre içe aktarıldı",Toast.LENGTH_LONG).show()
+                section="İçe Aktarılan Kur'an"
+                render()
+            } catch(e:Exception) {
+                Toast.makeText(this,"İçe aktarma başarısız: ${e.message}",Toast.LENGTH_LONG).show()
+            }
+            return
+        }
         if(resultCode==RESULT_OK && data?.data!=null && (requestCode==pickFull || requestCode==pickShort)) {
             val uri=data.data!!
             contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)
