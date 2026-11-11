@@ -106,17 +106,47 @@ class MainActivity : Activity(), SensorEventListener {
         root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(16,12,16,20) }
         scroll.addView(root)
         outer.addView(scroll, LinearLayout.LayoutParams(-1,0,1f))
-        val navigation = HorizontalScrollView(this).apply { isHorizontalScrollBarEnabled = false }
-        val tabs = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        listOf("Vakitler","Kıble","Ezan","Kur'an","Dualar","Zikir","99 İsim").forEach { tab ->
-            tabs.addView(button(tab) { section=tab; render() }.apply {
-                setTextColor(if(section==tab) gold else white)
-                setPadding(12,12,12,12)
-            })
+        val tabs=LinearLayout(this).apply {
+            orientation=LinearLayout.HORIZONTAL
+            setBackgroundColor(Color.rgb(10,34,27))
         }
-        navigation.addView(tabs); outer.addView(navigation)
+        listOf("Vakitler" to "Ana Sayfa","Kıble" to "Kıble","Zikir" to "Zikir","Menüler" to "Menüler").forEach { (tab,label) ->
+            tabs.addView(button(label) { section=tab; render() }.apply {
+                textSize=12f
+                setTextColor(if(section==tab) gold else white)
+                setPadding(2,12,2,12)
+            },LinearLayout.LayoutParams(0,-2,1f))
+        }
+        outer.addView(tabs)
         setContentView(outer)
         when(section) {
+            "Menüler" -> {
+                root.addView(text("TÜM MENÜLER",24f,gold))
+                root.addView(text("İbadet ve günlük yaşam için bütün bölümler",15f))
+                val items=listOf(
+                    "Namaz Vakitleri" to "Vakitler",
+                    "Kıble Pusulası" to "Kıble",
+                    "Ezan ve Alarmlar" to "Ezan",
+                    "Kur'an-ı Kerim" to "Kur'an",
+                    "Günlük Dualar" to "Dualar",
+                    "Dijital Tesbih" to "Zikir",
+                    "Allah'ın 99 İsmi" to "99 İsim"
+                )
+                items.chunked(2).forEach { pair ->
+                    val line=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
+                    pair.forEach { (title,target) ->
+                        val tile=panel().apply {
+                            gravity=Gravity.CENTER
+                            minimumHeight=140
+                            addView(text(title,18f,gold).apply { gravity=Gravity.CENTER })
+                            setOnClickListener { section=target; render() }
+                        }
+                        line.addView(tile,LinearLayout.LayoutParams(0,-2,1f).apply { setMargins(4,4,4,4) })
+                    }
+                    if(pair.size==1) line.addView(android.view.View(this),LinearLayout.LayoutParams(0,1,1f))
+                    root.addView(line)
+                }
+            }
             "Vakitler" -> {
                 heading=text(locationLabel,17f,gold).apply { gravity=Gravity.CENTER }
                 root.addView(heading)
