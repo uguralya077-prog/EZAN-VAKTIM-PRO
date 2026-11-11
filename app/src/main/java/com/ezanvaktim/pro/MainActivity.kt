@@ -558,7 +558,38 @@ class MainActivity : Activity(), SensorEventListener {
             timerTarget=upcoming.second
         } else {
             timerPrayer="Yarın İmsak"
-            timerTarget=try { LocalDateTime.of(LocalDate.now().plusDays(1),LocalTime.parse(obj.optString("Fajr","05:00").take(5))) } catch(_:Exception) { null }
+            val tomorrow=LocalDate.now().plusDays(1)
+            val tomorrowKey="times_${tomorrow}_${latitude}_${longitude}"
+            val savedTomorrow=prefs.getString(tomorrowKey,null)
+            timerTarget=try {
+                val fajr=if(savedTomorrow!=null) JSONObject(savedTomorrow).getString("Fajr").take(5)
+                    else obj.optString("Fajr","05:00").take(5)
+                LocalDateTime.of(tomorrow,LocalTime.parse(fajr))
+            } catch(_:Exception) { null }
+            if(savedTomorrow==null) {
+                val expectedGeneration=requestGeneration
+                val lat=latitude
+                val lon=longitude
+                thread {
+                    try {
+                        val date=tomorrow.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
+                        val url=URL("https://api.aladhan.com/v1/timings/$date?latitude=$lat&longitude=$lon&method=13")
+                        val connection=url.openConnection().apply { connectTimeout=10000; readTimeout=10000 }
+                        val json=JSONObject(connection.getInputStream().bufferedReader().use { it.readText() })
+                        val timing=json.getJSONObject("data").getJSONObject("timings")
+                        prefs.edit().putString(tomorrowKey,timing.toString()).apply()
+                        val exact=LocalDateTime.of(tomorrow,LocalTime.parse(timing.getString("Fajr").take(5)))
+                        runOnUiThread {
+                            if(section=="Vakitler" && requestGeneration==expectedGeneration && latitude==lat && longitude==lon) {
+                                timerTarget=exact
+                                timerPrayer="Yarın İmsak"
+                                timerHandler.removeCallbacks(timerTick)
+                                timerHandler.post(timerTick)
+                            }
+                        }
+                    } catch(_:Exception) {}
+                }
+            }
         }
         timerHandler.removeCallbacks(timerTick)
         timerHandler.post(timerTick)
