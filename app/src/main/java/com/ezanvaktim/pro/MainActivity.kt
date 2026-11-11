@@ -446,11 +446,13 @@ class MainActivity : Activity(), SensorEventListener {
                     results.removeAllViews()
                     val selected=categories[category.selectedItemPosition]
                     val query=search.text.toString().trim()
+                    var matching=0
                     duas.filter { (group,title,body) ->
                         (!onlyDuaFavorites.isChecked || duaFavorites.contains(title)) &&
                         (selected=="Tümü" || selected==group) &&
                         (query.isEmpty() || title.contains(query,true) || body.contains(query,true) || group.contains(query,true))
                     }.forEach { (group,title,body) ->
+                        matching++
                         results.addView(panel().apply {
                             addView(text(group.uppercase(Locale("tr","TR")),13f,gold))
                             addView(text(title,19f,white))
@@ -460,6 +462,13 @@ class MainActivity : Activity(), SensorEventListener {
                                 prefs.edit().putStringSet("favorite_duas",duaFavorites.toSet()).apply()
                                 refreshDuas()
                             })
+                            addView(button("Paylaş") {
+                                val send=Intent(Intent.ACTION_SEND).apply {
+                                    type="text/plain"
+                                    putExtra(Intent.EXTRA_TEXT,title+"\n"+body)
+                                }
+                                startActivity(Intent.createChooser(send,"Duayı paylaş"))
+                            })
                             addView(button("Metni kopyala") {
                                 val clipboard=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
                                 clipboard.setPrimaryClip(ClipData.newPlainText(title,body))
@@ -467,6 +476,7 @@ class MainActivity : Activity(), SensorEventListener {
                             })
                         })
                     }
+                    if(matching==0) results.addView(text("Bu filtreyle eşleşen dua bulunamadı.",15f))
                 }
                 onlyDuaFavorites.setOnCheckedChangeListener { _,_ -> refreshDuas() }
                 category.onItemSelectedListener=object:android.widget.AdapterView.OnItemSelectedListener {
