@@ -999,11 +999,17 @@ object AlarmScheduler {
 }
 
 object PrayerRefresh {
+    private fun scheduleRefreshRetrySafely(context:Context) {
+        try { AlarmScheduler.scheduleRefreshRetry(context) } catch(_:Exception) { }
+    }
     fun refreshFromCache(context:Context) {
         val prefs=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
         val lat=java.lang.Double.longBitsToDouble(prefs.getLong("lat",java.lang.Double.doubleToRawLongBits(37.5753)))
         val lon=java.lang.Double.longBitsToDouble(prefs.getLong("lon",java.lang.Double.doubleToRawLongBits(36.9228)))
-        val cached=prefs.getString("times_${LocalDate.now()}_${lat}_${lon}",null) ?: return
+        val cached=prefs.getString("times_${LocalDate.now()}_${lat}_${lon}",null) ?: run {
+            scheduleRefreshRetrySafely(context)
+            return
+        }
         val timings=JSONObject(cached)
         val schedule=keys.mapIndexedNotNull { index,key ->
             if(index==1) null else try {
