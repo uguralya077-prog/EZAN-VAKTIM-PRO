@@ -355,21 +355,40 @@ class MainActivity : Activity(), SensorEventListener {
                     Triple("Felak • 113. sûre","بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nقُلْ أَعُوذُ بِرَبِّ الْفَلَقِ\nمِنْ شَرِّ مَا خَلَقَ\nوَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ\nوَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ\nوَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ","5 âyet"),
                     Triple("Nâs • 114. sûre","بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nقُلْ أَعُوذُ بِرَبِّ النَّاسِ\nمَلِكِ النَّاسِ\nإِلَٰهِ النَّاسِ\nمِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ\nالَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ\nمِنَ الْجِنَّةِ وَالنَّاسِ","6 âyet")
                 )
-                surahs.forEach { (title,arabic,count) ->
-                    root.addView(panel().apply {
-                        addView(text("$title • $count",19f,gold))
-                        addView(text(arabic,25f,white).apply {
-                            gravity=Gravity.RIGHT
-                            textDirection=android.view.View.TEXT_DIRECTION_RTL
-                            setLineSpacing(12f,1.25f)
-                        })
-                        addView(button("Metni kopyala") {
-                            val clipboard=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
-                            clipboard.setPrimaryClip(ClipData.newPlainText(title,arabic))
-                            Toast.makeText(this@MainActivity,"Metin kopyalandı",Toast.LENGTH_SHORT).show()
-                        })
-                    })
+                val searchSurah=EditText(this).apply {
+                    hint="Sûre ara..."
+                    setSingleLine(true)
+                    setTextColor(white)
+                    setHintTextColor(Color.LTGRAY)
                 }
+                root.addView(searchSurah)
+                val surahList=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
+                root.addView(surahList)
+                fun showSurahs(query:String) {
+                    surahList.removeAllViews()
+                    surahs.filter { it.first.contains(query,true) }.forEach { (title,arabic,count) ->
+                        surahList.addView(panel().apply {
+                            addView(text("$title • $count",19f,gold))
+                            addView(text(arabic,25f,white).apply {
+                                gravity=Gravity.RIGHT
+                                textDirection=android.view.View.TEXT_DIRECTION_RTL
+                                setLineSpacing(12f,1.25f)
+                            })
+                            addView(button("Metni kopyala") {
+                                val clipboard=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText(title,arabic))
+                                Toast.makeText(this@MainActivity,"Metin kopyalandı",Toast.LENGTH_SHORT).show()
+                            })
+                        })
+                    }
+                    if(surahList.childCount==0) surahList.addView(text("Eşleşen sûre bulunamadı",15f))
+                }
+                searchSurah.addTextChangedListener(object:android.text.TextWatcher {
+                    override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int) {}
+                    override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int) { showSurahs(s?.toString() ?: "") }
+                    override fun afterTextChanged(s:android.text.Editable?) {}
+                })
+                showSurahs("")
             }
             "Kur'an Oku" -> {
                 root.addView(button("← Kur'an menüsüne dön") { section="Kur'an"; render() })
