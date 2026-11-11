@@ -541,6 +541,39 @@ class MainActivity : Activity(), SensorEventListener {
                     "El-Müntakım","El-Afüvv","Er-Raûf","Mâlikü'l-Mülk","Zü'l-Celâli ve'l-İkrâm","El-Muksit","El-Câmi'","El-Ganiyy","El-Muğnî","El-Mâni'",
                     "Ed-Dârr","En-Nâfi'","En-Nûr","El-Hâdî","El-Bedî'","El-Bâkî","El-Vâris","Er-Reşîd","Es-Sabûr"
                 )
+                val nameMeanings=listOf(
+                    "Rahmeti bütün varlıkları kuşatan",
+                    "Merhameti sürekli olan",
+                    "Mutlak hükümdar",
+                    "Her türlü eksiklikten uzak",
+                    "Esenlik veren",
+                    "Güven veren",
+                    "Gözetip koruyan",
+                    "Üstün ve güçlü",
+                    "Dilediğini yaptırmaya gücü yeten",
+                    "Büyüklükte eşsiz",
+                    "Yaratan",
+                    "Örneksiz var eden",
+                    "Şekil veren",
+                    "Çok bağışlayan",
+                    "Her şeye galip gelen",
+                    "Karşılıksız bolca veren",
+                    "Rızık veren",
+                    "Kapıları açan",
+                    "Her şeyi bilen",
+                    "Daraltan",
+                    "Genişleten",
+                    "Alçaltan",
+                    "Yükselten",
+                    "İzzet veren",
+                    "Zillete düşüren",
+                    "Her şeyi işiten",
+                    "Her şeyi gören",
+                    "Hükmeden",
+                    "Mutlak adalet sahibi",
+                    "Lütuf ve incelik sahibi"
+                )
+                root.addView(text("İlk 30 isim için kısa anlam açıklamaları eklenmiştir; diğerleri kaynak kontrolü tamamlanınca eklenecektir.",14f))
                 val saved=prefs.getStringSet("favorite_names",emptySet())?.toMutableSet() ?: mutableSetOf()
                 val onlyFavorites=CheckBox(this).apply {
                     text="Yalnızca favorilerim"
@@ -561,10 +594,11 @@ class MainActivity : Activity(), SensorEventListener {
                     var count=0
                     names99.forEachIndexed { index,name ->
                         if((!onlyFavorites.isChecked || saved.contains(index.toString())) &&
-                            (query.isBlank() || name.contains(query,true) || (index+1).toString()==query.trim())) {
+                            (query.isBlank() || name.contains(query,true) || nameMeanings.getOrNull(index)?.contains(query,true)==true || (index+1).toString()==query.trim())) {
                             count++
                             val card=panel()
                             card.addView(text("${index+1}. $name",19f,gold))
+                            nameMeanings.getOrNull(index)?.let { card.addView(text(it,15f,white)) }
                             val buttons=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
                             buttons.addView(button(if(saved.contains(index.toString())) "★ Favoride" else "☆ Favoriye ekle") {
                                 val key=index.toString()
