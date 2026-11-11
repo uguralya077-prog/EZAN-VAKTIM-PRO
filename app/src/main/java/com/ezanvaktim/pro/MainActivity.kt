@@ -326,6 +326,13 @@ class MainActivity : Activity(), SensorEventListener {
                             render()
                         }.show()
                 })
+                root.addView(button("Paylaş • Ezan Vaktim Pro") {
+                    val share=Intent(Intent.ACTION_SEND).apply {
+                        type="text/plain"
+                        putExtra(Intent.EXTRA_TEXT,"EZAN VAKTİM PRO — Namaz vakitleri, kıble pusulası, dualar ve zikir.")
+                    }
+                    startActivity(Intent.createChooser(share,"Uygulamayı paylaş"))
+                })
                 root.addView(button("Alarm ve bildirim ayarları") { section="Ezan"; render() })
                 root.addView(button("Widget ayarları") { section="Widget"; render() })
                 root.addView(text("Not: Telefonun pil tasarrufu ve bildirim izinleri ezan uyarılarının zamanında çalışmasını etkileyebilir.",14f))
