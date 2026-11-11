@@ -1,8 +1,4 @@
-plugins { id("com.android.application"); id("org.jetbrains.kotlin.android") }
-android {
-    namespace = "com.ezanvaktim.pro"
-    compileSdk = 35
-    defaultConfig { applicationId = "com.ezanvaktim.pro"; minSdk = 26; targetSdk = 35; versionCode = 2; versionName = "0.2.0" }
-    compileOptions { sourceCompatibility = JavaVersion.VERSION_17; targetCompatibility = JavaVersion.VERSION_17 }
-    kotlinOptions { jvmTarget = "17" }
+plugins {
+    id("com.android.application") version "8.7.3" apply false
+    id("org.jetbrains.kotlin.android") version "2.0.21" apply false
 }
