@@ -465,10 +465,18 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(panel().apply { addView(counter) })
                 val progress=text("",17f,white).apply { gravity=Gravity.CENTER }
                 root.addView(progress)
+                val goalProgress=ProgressBar(this,null,android.R.attr.progressBarStyleHorizontal).apply {
+                    max=100
+                    progressTintList=android.content.res.ColorStateList.valueOf(accent)
+                    progressBackgroundTintList=android.content.res.ColorStateList.valueOf(Color.rgb(45,79,62))
+                }
+                root.addView(goalProgress,LinearLayout.LayoutParams(-1,(8*resources.displayMetrics.density).toInt()))
                 fun refreshCounter() {
                     val target=goals[selector.selectedItemPosition].toIntOrNull()
                     progress.text=if(target==null) "Serbest zikir" else "Hedef: $target • Kalan: ${(target-zikrCount).coerceAtLeast(0)}"
                     counter.text="$zikrCount"
+                    goalProgress.progress=if(target==null) 0 else ((zikrCount.toLong()*100L/target.coerceAtLeast(1)).coerceIn(0L,100L)).toInt()
+                    goalProgress.visibility=if(target==null) android.view.View.GONE else android.view.View.VISIBLE
                 }
                 selector.onItemSelectedListener=object:android.widget.AdapterView.OnItemSelectedListener {
                     override fun onNothingSelected(parent:android.widget.AdapterView<*>?) {}
