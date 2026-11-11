@@ -182,12 +182,14 @@ class MainActivity : Activity(), SensorEventListener {
                 heading=text(locationLabel,17f,gold).apply { gravity=Gravity.CENTER }
                 root.addView(heading)
                 root.addView(text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy",Locale("tr","TR"))),17f,white).apply { gravity=Gravity.CENTER })
-                root.addView(button("📍 Konumumu kullan") { locate() })
-                root.addView(button("↻ Vakitleri internetten yenile") {
+                val locationActions=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
+                locationActions.addView(button("📍 Konum") { locate() },LinearLayout.LayoutParams(0,-2,1f))
+                locationActions.addView(button("↻ Yenile") {
                     val key="times_${LocalDate.now()}_${latitude}_${longitude}"
                     prefs.edit().remove(key).apply()
                     loadTimes()
-                })
+                },LinearLayout.LayoutParams(0,-2,1f))
+                root.addView(locationActions)
                 root.addView(button("Şehir / koordinat seç") {
                     val latInput=EditText(this).apply { hint="Enlem (ör. 37.5753)"; setText(latitude.toString()); inputType=android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED }
                     val lonInput=EditText(this).apply { hint="Boylam (ör. 36.9228)"; setText(longitude.toString()); inputType=android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED }
@@ -222,6 +224,7 @@ class MainActivity : Activity(), SensorEventListener {
             }
             "Kıble" -> {
                 root.addView(text("KIBLE PUSULASI",23f,gold))
+                root.addView(text(locationLabel,15f,white).apply { gravity=Gravity.CENTER })
                 dial=QiblaDial(this)
                 root.addView(dial,LinearLayout.LayoutParams(-1,(resources.displayMetrics.density*300).toInt()))
                 compass=text("Telefonu düz tutun. Sensör bekleniyor…",18f,gold).apply {
