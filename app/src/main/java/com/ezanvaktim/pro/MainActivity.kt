@@ -1013,7 +1013,12 @@ object PrayerRefresh {
             scheduleRefreshRetrySafely(context)
             return
         }
-        val timings=JSONObject(cached)
+        val timings=try { JSONObject(cached) } catch(_:Exception) { scheduleRefreshRetrySafely(context); return }
+        if(!keys.all { key -> isValidPrayerClock(timings.optString(key)) }) {
+            prefs.edit().remove("times_${LocalDate.now()}_${lat}_${lon}").apply()
+            scheduleRefreshRetrySafely(context)
+            return
+        }
         val schedule=keys.mapIndexedNotNull { index,key ->
             if(index==1) null else try {
                 names[index] to LocalDateTime.of(LocalDate.now(),LocalTime.parse(timings.getString(key).take(5)))
