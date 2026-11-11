@@ -828,7 +828,16 @@ class MainActivity : Activity(), SensorEventListener {
                     val surah=items.getJSONObject(index)
                     root.addView(text("${index+1}. ${surah.getString("name")}",23f,gold))
                     root.addView(text("GERÇEK KUR'AN TİLAVETİ • internet gerektirir",17f,gold))
-                    val reciters=listOf("Mişârî Râşid el-Afâsî" to "ar.alafasy","Mahmud Halil el-Husarî" to "ar.husary","Muhammed Sıddîk el-Minşâvî" to "ar.minshawi")
+                    val reciters=listOf(
+                        "Mişârî Râşid el-Afâsî" to "ar.alafasy",
+                        "Mahmud Halil el-Husarî" to "ar.husary",
+                        "Muhammed Sıddîk el-Minşâvî" to "ar.minshawi",
+                        "Abdurrahman es-Sudeys" to "ar.abdurrahmaansudais",
+                        "Abdülbasit Abdüssamed" to "ar.abdulbasitmurattal",
+                        "Saud eş-Şureym" to "ar.saoodshuraym",
+                        "Ahmed el-Acemî" to "ar.ahmedajamy",
+                        "Maher el-Muaykılî" to "ar.mahermuaiqly"
+                    )
                     val reciterPicker=Spinner(this).apply {
                         adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,reciters.map { it.first })
                     }
