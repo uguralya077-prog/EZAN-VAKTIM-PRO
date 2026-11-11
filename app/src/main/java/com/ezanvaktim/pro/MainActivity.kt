@@ -576,7 +576,7 @@ class MainActivity : Activity(), SensorEventListener {
                             android.app.AlertDialog.Builder(this)
                                 .setTitle("İşaretlediğim ayetler")
                                 .setItems(labels) { _, which ->
-                                    prefs.edit().putInt("quran_import_last",marks[which]).apply()
+                                    prefs.edit().putInt("quran_import_last",marks[which]).putBoolean("quran_jump_bookmark",true).apply()
                                     section="İçe Aktarılan Sûre"
                                     render()
                                 }.setNegativeButton("Kapat",null).show()
@@ -723,6 +723,11 @@ class MainActivity : Activity(), SensorEventListener {
                         drawVerses()
                     }
                     drawVerses()
+                    if(prefs.getBoolean("quran_jump_bookmark",false)) {
+                        prefs.edit().remove("quran_jump_bookmark").apply()
+                        val marked=prefs.getInt("quran_bookmark_${index}",-1)
+                        if(marked>=0) jumpToVerse(marked)
+                    }
                     root.addView(button("★ İşaretli ayete git") {
                         val marked=prefs.getInt("quran_bookmark_${index}",-1)
                         if(marked>=0) jumpToVerse(marked)
