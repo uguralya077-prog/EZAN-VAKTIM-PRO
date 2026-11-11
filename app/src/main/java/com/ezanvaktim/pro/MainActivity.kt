@@ -621,10 +621,24 @@ class MainActivity : Activity(), SensorEventListener {
                     else root.addView(text("Bu dosyada Türkçe meal bulunmuyor.",14f))
                     val verseContainer=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
                     root.addView(verseContainer)
+                    val verseViews=ArrayList<TextView>()
+                    fun jumpToVerse(number:Int) {
+                        if(number !in 0 until verseViews.size) return
+                        val target=verseViews[number]
+                        target.post {
+                            val scroll=root.parent as? ScrollView ?: return@post
+                            val location=IntArray(2)
+                            val parentLocation=IntArray(2)
+                            target.getLocationOnScreen(location)
+                            scroll.getLocationOnScreen(parentLocation)
+                            scroll.smoothScrollBy(0,location[1]-parentLocation[1]-80)
+                        }
+                    }
                     fun drawVerses() {
                         verseContainer.removeAllViews()
+                        verseViews.clear()
                         for(v in 0 until verses.length()) {
-                            verseContainer.addView(text("${if(prefs.getInt("quran_bookmark_${index}",-1)==v) "★ " else ""}${verses.getString(v)}  ﴿${v+1}﴾",26f).apply {
+                            val verseText=text("${if(prefs.getInt("quran_bookmark_${index}",-1)==v) "★ " else ""}${verses.getString(v)}  ﴿${v+1}﴾",26f).apply {
                                 gravity=Gravity.RIGHT
                                 textDirection=android.view.View.TEXT_DIRECTION_RTL
                                 setOnClickListener {
@@ -632,10 +646,17 @@ class MainActivity : Activity(), SensorEventListener {
                                     val previous=prefs.getInt(key,-1)
                                     val next=if(previous==v) -1 else v
                                     prefs.edit().putInt(key,next).apply()
+                                    if(previous in 0 until verseViews.size) {
+                                        verseViews[previous].text="${verses.getString(previous)}  ﴿${previous+1}﴾"
+                                    }
+                                    if(next>=0) {
+                                        verseViews[next].text="★ ${verses.getString(next)}  ﴿${next+1}﴾"
+                                    }
                                     bookmarkStatus.text=if(next>=0) "İşaretli ayet: ${next+1}" else "Bu sûrede işaretli ayet yok"
-                                    drawVerses()
                                 }
-                            })
+                            }
+                            verseViews.add(verseText)
+                            verseContainer.addView(verseText)
                             if(mealToggle.isChecked && translations!=null) {
                                 verseContainer.addView(text("${v+1}. ${translations.getString(v)}",16f,accent))
                             }
@@ -646,6 +667,11 @@ class MainActivity : Activity(), SensorEventListener {
                         drawVerses()
                     }
                     drawVerses()
+                    root.addView(button("★ İşaretli ayete git") {
+                        val marked=prefs.getInt("quran_bookmark_${index}",-1)
+                        if(marked>=0) jumpToVerse(marked)
+                        else Toast.makeText(this,"Önce bir ayete dokunarak işaretleyin",Toast.LENGTH_SHORT).show()
+                    })
                     root.addView(LinearLayout(this).apply {
                         orientation=LinearLayout.HORIZONTAL
                         if(index>0) addView(button("← Önceki sûre") {
