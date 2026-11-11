@@ -1050,7 +1050,7 @@ class MainActivity : Activity(), SensorEventListener {
             }
             "Dualar" -> {
                 root.addView(text("GÜNLÜK DUALAR VE ZİKİRLER",23f,gold))
-                root.addView(text("Kolay erişim için konulara ayrılmış başlangıç koleksiyonu",15f))
+                root.addView(text("Duaları sesli dinleyebilir, arayabilir ve favorilerinize ekleyebilirsiniz. Türkçe okunuşlar telefonun ses motoruyla okunur.",15f))
                 root.addView(text("KUR'AN'DAN DUALAR • ARAPÇA VE TÜRKÇE ANLAMI",18f,gold))
                 val quranDuas=listOf(
                     Triple("Bakara 2:201 • Dünya ve ahiret iyiliği","رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ","Rabbimiz! Bize dünyada iyilik, ahirette de iyilik ver; bizi ateşin azabından kor."),
@@ -1119,6 +1119,8 @@ class MainActivity : Activity(), SensorEventListener {
                             addView(text(group.uppercase(Locale("tr","TR")),13f,gold))
                             addView(text(title,19f,white))
                             addView(text(body,17f,gold))
+                            addView(button("▶ Duayı sesli oku") { readAloud(body,false) })
+                            addView(button("■ Okumayı durdur") { stopReading() })
                             addView(button(if(duaFavorites.contains(title)) "★ Favorilerimden çıkar" else "☆ Favorilere ekle") {
                                 if(!duaFavorites.add(title)) duaFavorites.remove(title)
                                 prefs.edit().putStringSet("favorite_duas",duaFavorites.toSet()).apply()
