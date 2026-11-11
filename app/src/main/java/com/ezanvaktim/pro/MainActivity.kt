@@ -302,17 +302,46 @@ class MainActivity : Activity(), SensorEventListener {
                 refreshCounter()
             }
             "99 İsim" -> {
-                root.addView(text("ALLAH'IN GÜZEL İSİMLERİ",22f,gold))
-                listOf(
-                    "Er-Rahmân — Sonsuz merhamet sahibi",
-                    "Er-Rahîm — Çok merhametli",
-                    "El-Melik — Mutlak hükümran",
-                    "El-Kuddûs — Her türlü eksiklikten uzak",
-                    "Es-Selâm — Esenlik kaynağı",
-                    "El-Mü'min — Güven veren",
-                    "El-Müheymin — Gözetip koruyan"
-                ).forEach { root.addView(text(it,17f)) }
-                root.addView(text("Şimdilik örnek isimler yer alıyor; 99 ismin tamamı ve açıklamaları henüz eklenmedi.",13f))
+                root.addView(text("ESMÂÜ'L HÜSNÂ",23f,gold))
+                root.addView(text("Allah'ın güzel isimleri",16f))
+                val names99=listOf(
+                    "Er-Rahmân","Er-Rahîm","El-Melik","El-Kuddûs","Es-Selâm","El-Mü'min","El-Müheymin","El-Azîz","El-Cebbâr","El-Mütekebbir",
+                    "El-Hâlık","El-Bâri'","El-Musavvir","El-Gaffâr","El-Kahhâr","El-Vehhâb","Er-Rezzâk","El-Fettâh","El-Alîm","El-Kâbıd",
+                    "El-Bâsıt","El-Hâfıd","Er-Râfi'","El-Muizz","El-Müzill","Es-Semî'","El-Basîr","El-Hakem","El-Adl","El-Latîf",
+                    "El-Habîr","El-Halîm","El-Azîm","El-Gafûr","Eş-Şekûr","El-Aliyy","El-Kebîr","El-Hafîz","El-Mukît","El-Hasîb",
+                    "El-Celîl","El-Kerîm","Er-Rakîb","El-Mücîb","El-Vâsi'","El-Hakîm","El-Vedûd","El-Mecîd","El-Bâis","Eş-Şehîd",
+                    "El-Hakk","El-Vekîl","El-Kaviyy","El-Metîn","El-Veliyy","El-Hamîd","El-Muhsî","El-Mübdi'","El-Muîd","El-Muhyî",
+                    "El-Mümît","El-Hayy","El-Kayyûm","El-Vâcid","El-Mâcid","El-Vâhid","El-Ehad","Es-Samed","El-Kâdir","El-Muktedir",
+                    "El-Mukaddim","El-Muahhir","El-Evvel","El-Âhir","Ez-Zâhir","El-Bâtın","El-Vâlî","El-Müteâlî","El-Berr","Et-Tevvâb",
+                    "El-Müntakım","El-Afüvv","Er-Raûf","Mâlikü'l-Mülk","Zü'l-Celâli ve'l-İkrâm","El-Muksit","El-Câmi'","El-Ganiyy","El-Muğnî","El-Mâni'",
+                    "Ed-Dârr","En-Nâfi'","En-Nûr","El-Hâdî","El-Bedî'","El-Bâkî","El-Vâris","Er-Reşîd","Es-Sabûr"
+                )
+                val search=EditText(this).apply {
+                    hint="İsim ara..."
+                    setSingleLine(true)
+                    setTextColor(white)
+                    setHintTextColor(Color.LTGRAY)
+                }
+                root.addView(search)
+                val results=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
+                root.addView(results)
+                fun fill(query:String) {
+                    results.removeAllViews()
+                    names99.forEachIndexed { index,name ->
+                        if(query.isBlank() || name.contains(query,true) || (index+1).toString()==query.trim()) {
+                            results.addView(panel().apply {
+                                addView(text("${index+1}. $name",18f,gold))
+                            })
+                        }
+                    }
+                }
+                search.addTextChangedListener(object:android.text.TextWatcher {
+                    override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int) {}
+                    override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int) { fill(s?.toString() ?: "") }
+                    override fun afterTextChanged(s:android.text.Editable?) {}
+                })
+                fill("")
+                root.addView(text("İsimlerin farklı kaynaklarda yazılışları değişebilir. Açıklamalar ve kaynak denetimi ayrıca eklenecek.",13f))
             }
         }
     }
