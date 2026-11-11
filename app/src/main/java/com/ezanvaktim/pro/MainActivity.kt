@@ -596,6 +596,53 @@ class MainActivity : Activity(), SensorEventListener {
                     root.addView(text("İçe aktarılan: ${items.length()} sûre • $totalVerses ayet • $translatedVerses meal satırı",14f,accent))
                     root.addView(text("Arapça kaynak: ${source.ifBlank { "Belirtilmemiş" }}",13f))
                     root.addView(text("Meal kaynağı: ${translationSource.ifBlank { "Belirtilmemiş" }}",13f))
+                    root.addView(button("Kur'an içinde ayet veya meal ara") {
+                        val input=EditText(this).apply {
+                            hint="Arapça ayet veya Türkçe kelime"
+                            setSingleLine(true)
+                        }
+                        android.app.AlertDialog.Builder(this)
+                            .setTitle("114 sûrede ara")
+                            .setView(input)
+                            .setNegativeButton("Vazgeç",null)
+                            .setPositiveButton("Ara") { _, _ ->
+                                val query=input.text.toString().trim()
+                                if(query.length<2) {
+                                    Toast.makeText(this,"En az iki karakter girin",Toast.LENGTH_SHORT).show()
+                                } else {
+                                    val hits=ArrayList<Pair<Int,Int>>()
+                                    val labels=ArrayList<String>()
+                                    loop@ for(i in 0 until items.length()) {
+                                        val surah=items.getJSONObject(i)
+                                        val verses=surah.getJSONArray("verses")
+                                        val translations=surah.optJSONArray("translations")
+                                        for(v in 0 until verses.length()) {
+                                            val arabic=verses.getString(v)
+                                            val meal=translations?.optString(v,"") ?: ""
+                                            if(arabic.contains(query,true) || meal.contains(query,true)) {
+                                                hits.add(i to v)
+                                                val excerpt=(if(meal.contains(query,true)) meal else arabic).take(90)
+                                                labels.add("${i+1}. ${surah.getString("name")} • ${v+1}. ayet: $excerpt")
+                                                if(hits.size>=100) break@loop
+                                            }
+                                        }
+                                    }
+                                    if(hits.isEmpty()) {
+                                        Toast.makeText(this,"Eşleşen ayet bulunamadı",Toast.LENGTH_LONG).show()
+                                    } else {
+                                        android.app.AlertDialog.Builder(this)
+                                            .setTitle("Arama sonuçları (${hits.size}${if(hits.size==100) "+" else ""})")
+                                            .setItems(labels.toTypedArray()) { _, which ->
+                                                val (surahIndex,verseIndex)=hits[which]
+                                                prefs.edit().putInt("quran_import_last",surahIndex)
+                                                    .putInt("quran_search_jump_verse",verseIndex).apply()
+                                                section="İçe Aktarılan Sûre"
+                                                render()
+                                            }.setNegativeButton("Kapat",null).show()
+                                    }
+                                }
+                            }.show()
+                    })
                     root.addView(button("★ İşaretlediğim sûreler") {
                         val marks=(0 until items.length()).filter { prefs.getInt("quran_bookmark_$it",-1)>=0 }
                         if(marks.isEmpty()) {
@@ -754,6 +801,11 @@ class MainActivity : Activity(), SensorEventListener {
                         drawVerses()
                     }
                     drawVerses()
+                    val searchJump=prefs.getInt("quran_search_jump_verse",-1)
+                    if(searchJump>=0) {
+                        prefs.edit().remove("quran_search_jump_verse").apply()
+                        jumpToVerse(searchJump)
+                    }
                     if(prefs.getBoolean("quran_jump_bookmark",false)) {
                         prefs.edit().remove("quran_jump_bookmark").apply()
                         val marked=prefs.getInt("quran_bookmark_${index}",-1)
