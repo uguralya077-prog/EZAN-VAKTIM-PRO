@@ -450,21 +450,15 @@ class MainActivity : Activity(), SensorEventListener {
                         addCategory(Intent.CATEGORY_OPENABLE)
                     },pickQuran)
                 })
-                root.addView(button("İçe aktardığım Kur'an dosyasını yedekle / paylaş") {
-                    val file=java.io.File(filesDir,"quran_import.json")
-                    if(!file.exists()) {
+                root.addView(button("İçe aktardığım Kur'an dosyasını dışa aktar") {
+                    if(!java.io.File(filesDir,"quran_import.json").exists()) {
                         Toast.makeText(this,"Önce 114 sûre dosyasını içe aktarın",Toast.LENGTH_LONG).show()
                     } else {
-                        try {
-                            val uri=androidx.core.content.FileProvider.getUriForFile(this,"${packageName}.fileprovider",file)
-                            startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
-                                type="application/json"
-                                putExtra(Intent.EXTRA_STREAM,uri)
-                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                            },"Kur'an JSON yedeğini paylaş"))
-                        } catch(e:Exception) {
-                            Toast.makeText(this,"Yedek paylaşılamadı: ${e.message}",Toast.LENGTH_LONG).show()
-                        }
+                        startActivityForResult(Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                            addCategory(Intent.CATEGORY_OPENABLE)
+                            type="application/json"
+                            putExtra(Intent.EXTRA_TITLE,"ezan_vaktim_kuran_yedek.json")
+                        },104)
                     }
                 })
                 root.addView(button("İçe aktarılan Kur'an verisini sil") {
@@ -1167,6 +1161,19 @@ class MainActivity : Activity(), SensorEventListener {
     @Deprecated("Activity result API compatibility")
     override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?) {
         super.onActivityResult(requestCode,resultCode,data)
+        if(resultCode==RESULT_OK && requestCode==104 && data?.data!=null) {
+            try {
+                val source=java.io.File(filesDir,"quran_import.json")
+                if(!source.exists()) throw IllegalStateException("İçe aktarılmış dosya bulunamadı")
+                contentResolver.openOutputStream(data.data!!,"w")?.use { output ->
+                    source.inputStream().use { input -> input.copyTo(output) }
+                } ?: throw IllegalStateException("Hedef dosya açılamadı")
+                Toast.makeText(this,"Kur'an JSON yedeği kaydedildi",Toast.LENGTH_LONG).show()
+            } catch(e:Exception) {
+                Toast.makeText(this,"Dışa aktarma başarısız: ${e.message}",Toast.LENGTH_LONG).show()
+            }
+            return
+        }
         if(resultCode==RESULT_OK && requestCode==pickQuran && data?.data!=null) {
             try {
                 val bytes=contentResolver.openInputStream(data.data!!)?.use { stream ->
