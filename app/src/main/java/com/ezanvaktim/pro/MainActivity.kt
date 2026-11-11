@@ -81,22 +81,41 @@ class MainActivity : Activity(), SensorEventListener {
         render()
     }
 
-    private fun text(s: String, size: Float = 18f, color: Int = white): TextView = TextView(this).apply {
-        text=s; textSize=size*prefs.getFloat("font_scale",1f); setTextColor(color); setPadding(18,15,18,15)
+    private val deep=Color.rgb(7,20,18)
+    private val surface=Color.rgb(16,43,37)
+    private val accent=Color.rgb(228,194,125)
+    private fun rounded(fill:Int,stroke:Int=Color.rgb(75,100,80),radius:Float=30f):GradientDrawable =
+        GradientDrawable().apply {
+            setColor(fill)
+            cornerRadius=radius*resources.displayMetrics.density
+            setStroke((1*resources.displayMetrics.density).toInt().coerceAtLeast(1),stroke)
+        }
+    private fun text(s:String,size:Float=18f,color:Int=white):TextView=TextView(this).apply {
+        text=s
+        textSize=size*prefs.getFloat("font_scale",1f)
+        setTextColor(color)
+        setPadding(18,15,18,15)
+        includeFontPadding=true
     }
-    private fun panel(): LinearLayout = LinearLayout(this).apply {
+    private fun panel():LinearLayout=LinearLayout(this).apply {
         orientation=LinearLayout.VERTICAL
         setPadding(18,16,18,16)
-        background=GradientDrawable().apply {
-            setColor(Color.rgb(16,49,39))
-            cornerRadius=24f
-            setStroke(2,Color.rgb(66,91,69))
+        background=rounded(surface,Color.rgb(54,88,70),18f)
+        elevation=4f*resources.displayMetrics.density
+        layoutParams=LinearLayout.LayoutParams(-1,-2).apply {
+            val d=resources.displayMetrics.density
+            setMargins(0,(7*d).toInt(),0,(7*d).toInt())
         }
-        val margins=LinearLayout.LayoutParams(-1,-2).apply { setMargins(0,8,0,8) }
-        layoutParams=margins
     }
-    private fun button(label: String, click: () -> Unit): Button = Button(this).apply {
-        text=label; setTextColor(white); setBackgroundColor(green); setOnClickListener { click() }
+    private fun button(label:String,click:()->Unit):Button=Button(this).apply {
+        text=label
+        textSize=15f*prefs.getFloat("font_scale",1f)
+        isAllCaps=false
+        setTextColor(accent)
+        background=rounded(Color.rgb(22,60,49),Color.rgb(95,119,84),14f)
+        setPadding(14,12,14,12)
+        minHeight=(48*resources.displayMetrics.density).toInt()
+        setOnClickListener { click() }
     }
     private fun render() {
         requestGeneration++
@@ -104,23 +123,26 @@ class MainActivity : Activity(), SensorEventListener {
         timerTarget=null
         timerLabel=null
         dial=null
-        val outer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(7,19,15)) }
+        val outer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(deep) }
         val header = text("☪  EZAN VAKTİM PRO", 25f, gold).apply {
             gravity = Gravity.CENTER; setTypeface(null, Typeface.BOLD)
+            setPadding(12,24,12,22)
+            setBackgroundColor(Color.rgb(11,34,28))
         }
         outer.addView(header)
         val scroll = ScrollView(this)
-        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(16,12,16,20) }
+        root = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setPadding(20,18,20,28) }
         scroll.addView(root)
         outer.addView(scroll, LinearLayout.LayoutParams(-1,0,1f))
         val tabs=LinearLayout(this).apply {
             orientation=LinearLayout.HORIZONTAL
-            setBackgroundColor(Color.rgb(10,34,27))
+            setBackgroundColor(Color.rgb(11,34,28))
         }
         listOf("Vakitler" to "Ana Sayfa","Kıble" to "Kıble","Zikir" to "Zikir","Menüler" to "Menüler").forEach { (tab,label) ->
             tabs.addView(button(label) { section=tab; render() }.apply {
                 textSize=12f
-                setTextColor(if(section==tab) gold else white)
+                setTextColor(if(section==tab) accent else Color.rgb(192,207,194))
+                background=rounded(if(section==tab) Color.rgb(32,73,56) else Color.rgb(11,34,28),if(section==tab) accent else Color.rgb(11,34,28),12f)
                 setPadding(2,12,2,12)
             },LinearLayout.LayoutParams(0,-2,1f))
         }
