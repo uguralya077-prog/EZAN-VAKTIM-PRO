@@ -384,24 +384,40 @@ class MainActivity : Activity(), SensorEventListener {
                     Triple("Felak • 113. sûre","بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nقُلْ أَعُوذُ بِرَبِّ الْفَلَقِ\nمِنْ شَرِّ مَا خَلَقَ\nوَمِنْ شَرِّ غَاسِقٍ إِذَا وَقَبَ\nوَمِنْ شَرِّ النَّفَّاثَاتِ فِي الْعُقَدِ\nوَمِنْ شَرِّ حَاسِدٍ إِذَا حَسَدَ","5 âyet"),
                     Triple("Nâs • 114. sûre","بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ\nقُلْ أَعُوذُ بِرَبِّ النَّاسِ\nمَلِكِ النَّاسِ\nإِلَٰهِ النَّاسِ\nمِنْ شَرِّ الْوَسْوَاسِ الْخَنَّاسِ\nالَّذِي يُوَسْوِسُ فِي صُدُورِ النَّاسِ\nمِنَ الْجِنَّةِ وَالنَّاسِ","6 âyet")
                 )
-                val searchSurah=EditText(this).apply {
+                val surahFavorites=prefs.getStringSet("favorite_surahs",emptySet())?.toMutableSet() ?: mutableSetOf()
+                var surahFont=prefs.getInt("surah_font_size",25).coerceIn(19,38)
+                val fontLabel=text("Arapça yazı boyutu: $surahFont",15f,gold)
+                root.addView(fontLabel)
+                val fontControls=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
+                root.addView(fontControls)                val searchSurah=EditText(this).apply {
                     hint="Sûre ara..."
                     setSingleLine(true)
                     setTextColor(white)
                     setHintTextColor(Color.LTGRAY)
                 }
                 root.addView(searchSurah)
+                val onlySurahFavorites=CheckBox(this).apply { text="Yalnızca favori sûreler"; setTextColor(gold) }
+                root.addView(onlySurahFavorites)
                 val surahList=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
                 root.addView(surahList)
                 fun showSurahs(query:String) {
                     surahList.removeAllViews()
-                    surahs.filter { it.first.contains(query,true) }.forEach { (title,arabic,count) ->
+                    surahs.filter { it.first.contains(query,true) && (!onlySurahFavorites.isChecked || surahFavorites.contains(it.first)) }.forEach { (title,arabic,count) ->
                         surahList.addView(panel().apply {
                             addView(text("$title • $count",19f,gold))
-                            addView(text(arabic,25f,white).apply {
+                            addView(text(arabic,surahFont.toFloat(),white).apply {
                                 gravity=Gravity.RIGHT
                                 textDirection=android.view.View.TEXT_DIRECTION_RTL
                                 setLineSpacing(12f,1.25f)
+                            })
+                            addView(button(if(surahFavorites.contains(title)) "★ Favoriden çıkar" else "☆ Favoriye ekle") {
+                                if(!surahFavorites.add(title)) surahFavorites.remove(title)
+                                prefs.edit().putStringSet("favorite_surahs",surahFavorites.toSet()).apply()
+                                showSurahs(searchSurah.text.toString())
+                            })
+                            addView(button("Okuduğum sûre olarak kaydet") {
+                                prefs.edit().putString("last_read_surah",title).apply()
+                                Toast.makeText(this@MainActivity,"Okuma kaydedildi",Toast.LENGTH_SHORT).show()
                             })
                             addView(button("Metni kopyala") {
                                 val clipboard=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
@@ -412,6 +428,10 @@ class MainActivity : Activity(), SensorEventListener {
                     }
                     if(surahList.childCount==0) surahList.addView(text("Eşleşen sûre bulunamadı",15f))
                 }
+                fontControls.addView(button("A−") { surahFont=(surahFont-2).coerceAtLeast(19); prefs.edit().putInt("surah_font_size",surahFont).apply(); fontLabel.text="Arapça yazı boyutu: $surahFont"; showSurahs(searchSurah.text.toString()) },LinearLayout.LayoutParams(0,-2,1f))
+                fontControls.addView(button("A+") { surahFont=(surahFont+2).coerceAtMost(38); prefs.edit().putInt("surah_font_size",surahFont).apply(); fontLabel.text="Arapça yazı boyutu: $surahFont"; showSurahs(searchSurah.text.toString()) },LinearLayout.LayoutParams(0,-2,1f))
+                onlySurahFavorites.setOnCheckedChangeListener { _,_ -> showSurahs(searchSurah.text.toString()) }
+                root.addView(text("Son okunan: "+(prefs.getString("last_read_surah",null) ?: "Henüz kaydedilmedi"),14f,accent))
                 searchSurah.addTextChangedListener(object:android.text.TextWatcher {
                     override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int) {}
                     override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int) { showSurahs(s?.toString() ?: "") }
