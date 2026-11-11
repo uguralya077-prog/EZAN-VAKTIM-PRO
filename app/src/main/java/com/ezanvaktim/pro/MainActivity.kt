@@ -1038,23 +1038,36 @@ class QiblaDial(context:Context):android.view.View(context) {
 }
 
 object AlarmScheduler {
+    private val prayerIds=mapOf("İmsak" to 10,"Öğle" to 11,"İkindi" to 12,"Akşam" to 13,"Yatsı" to 14)
     fun schedule(context:Context, times:List<Pair<String,LocalDateTime>>) {
         val manager=context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        times.forEachIndexed { index,(name,time) ->
-            if(!context.getSharedPreferences(PREF,Context.MODE_PRIVATE).getBoolean("alarm_$name",true)) {
-                manager.cancel(PendingIntent.getBroadcast(context,index,Intent(context,AlarmReceiver::class.java),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
-                return@forEachIndexed
+        val flags=PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val prefs=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
+        // Remove pending intents created by older versions using list positions.
+        if(!prefs.getBoolean("alarm_id_migrated_v2",false)) {
+            for(oldId in 0..4) {
+                val old=PendingIntent.getBroadcast(context,oldId,Intent(context,AlarmReceiver::class.java),flags)
+                manager.cancel(old)
+                old.cancel()
             }
-            if(!time.isAfter(LocalDateTime.now())) {
-                manager.cancel(PendingIntent.getBroadcast(context,index,Intent(context,AlarmReceiver::class.java),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE))
-                return@forEachIndexed
-            }
+            prefs.edit().putBoolean("alarm_id_migrated_v2",true).apply()
+        }
+        for((name,time) in times) {
+            val id=prayerIds[name] ?: continue
             val intent=Intent(context,AlarmReceiver::class.java).putExtra("name",name)
-            val pending=PendingIntent.getBroadcast(context,index,intent,PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+            val pending=PendingIntent.getBroadcast(context,id,intent,flags)
+            if(!prefs.getBoolean("alarm_$name",true) || !time.isAfter(LocalDateTime.now())) {
+                manager.cancel(pending)
+                continue
+            }
             val epoch=time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
-            if(Build.VERSION.SDK_INT>=31 && !manager.canScheduleExactAlarms()) manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,epoch,pending)
-            else try { manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,epoch,pending) }
-            catch(_:SecurityException) { manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,epoch,pending) }
+            if(Build.VERSION.SDK_INT>=31 && !manager.canScheduleExactAlarms()) {
+                manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,epoch,pending)
+            } else try {
+                manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,epoch,pending)
+            } catch(_:SecurityException) {
+                manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,epoch,pending)
+            }
         }
     }
     fun scheduleRefreshRetry(context:Context) {
