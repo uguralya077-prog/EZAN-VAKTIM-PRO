@@ -46,6 +46,25 @@ class MainActivity : Activity(), SensorEventListener {
     private var bearing = 0.0
     private var dial: QiblaDial? = null
     private var audioPreview:android.media.MediaPlayer?=null
+    private var speech:android.speech.tts.TextToSpeech?=null
+    private var speechReady=false
+    private fun readAloud(value:String,arabic:Boolean=true) {
+        if(!speechReady) {
+            Toast.makeText(this,"Sesli okuma motoru hazırlanıyor veya cihazda uygun ses yok",Toast.LENGTH_LONG).show()
+            return
+        }
+        val engine=speech ?: return
+        val language=if(arabic) Locale("ar") else Locale("tr","TR")
+        val availability=engine.setLanguage(language)
+        if(availability<0) {
+            Toast.makeText(this,"Bu dilin ses paketi yüklü değil. Telefonun metin okuma ayarlarından yükleyin.",Toast.LENGTH_LONG).show()
+            return
+        }
+        engine.setSpeechRate(if(arabic) 0.78f else 0.9f)
+        engine.speak(value,android.speech.tts.TextToSpeech.QUEUE_FLUSH,null,"ezan_reader")
+    }
+    private fun stopReading() { speech?.stop() }
+
     private var locationLabel = "Kahramanmaraş (örnek konum)"
     private val gold = Color.rgb(215,181,109)
     private val white = Color.rgb(241,244,239)
@@ -79,6 +98,9 @@ class MainActivity : Activity(), SensorEventListener {
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(NotificationChannel(CHANNEL,"Namaz bildirimleri",NotificationManager.IMPORTANCE_HIGH))
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 20)
+        speech=android.speech.tts.TextToSpeech(this) { status ->
+            speechReady=status==android.speech.tts.TextToSpeech.SUCCESS
+        }
         render()
     }
 
@@ -120,6 +142,7 @@ class MainActivity : Activity(), SensorEventListener {
     }
     private fun render() {
         requestGeneration++
+        stopReading()
         timerHandler.removeCallbacks(timerTick)
         timerTarget=null
         timerLabel=null
@@ -578,6 +601,8 @@ class MainActivity : Activity(), SensorEventListener {
                     surahs.filter { it.first.contains(query,true) && (!onlySurahFavorites.isChecked || surahFavorites.contains(it.first)) }.forEach { (title,arabic,count) ->
                         surahList.addView(panel().apply {
                             addView(text("$title • $count",19f,gold))
+                            addView(button("▶ Sûreyi sesli oku (Arapça)") { readAloud(arabic) })
+                            addView(button("■ Sesli okumayı durdur") { stopReading() })
                             addView(text(arabic,surahFont.toFloat(),white).apply {
                                 gravity=Gravity.RIGHT
                                 textDirection=android.view.View.TEXT_DIRECTION_RTL
@@ -923,6 +948,9 @@ class MainActivity : Activity(), SensorEventListener {
                         addView(text(title,17f,gold))
                         addView(text(arabic,24f,white).apply { gravity=Gravity.RIGHT; textDirection=android.view.View.TEXT_DIRECTION_RTL })
                         addView(text(meaning,16f,white))
+                        addView(button("▶ Duayı Arapça sesli oku") { readAloud(arabic) })
+                        addView(button("▶ Türkçe anlamını dinle") { readAloud(meaning,false) })
+                        addView(button("■ Okumayı durdur") { stopReading() })
                         addView(button("Duayı kopyala") {
                             val clipboard=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
                             clipboard.setPrimaryClip(ClipData.newPlainText(title,"$title\n$arabic\n$meaning"))
@@ -1489,7 +1517,13 @@ class MainActivity : Activity(), SensorEventListener {
         sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)?.also { sensorManager.registerListener(this,it,SensorManager.SENSOR_DELAY_UI) }
         if(section=="Kıble" && sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)==null) compass.text="Bu cihazda pusula sensörü bulunamadı"
     }
-    override fun onPause() { stopAudioPreview(); timerHandler.removeCallbacks(timerTick); sensorManager.unregisterListener(this); super.onPause() }
+    override fun onPause() { stopReading(); stopAudioPreview(); timerHandler.removeCallbacks(timerTick); sensorManager.unregisterListener(this); super.onPause() }
+    override fun onDestroy() {
+        stopReading()
+        speech?.shutdown()
+        speech=null
+        super.onDestroy()
+    }
     override fun onSensorChanged(event:SensorEvent) {
         if(event.sensor.type==Sensor.TYPE_ACCELEROMETER) gravity=event.values.clone()
         if(event.sensor.type==Sensor.TYPE_MAGNETIC_FIELD) magnetic=event.values.clone()
