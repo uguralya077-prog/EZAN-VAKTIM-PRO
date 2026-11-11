@@ -393,8 +393,14 @@ class MainActivity : Activity(), SensorEventListener {
                     "El-Müntakım","El-Afüvv","Er-Raûf","Mâlikü'l-Mülk","Zü'l-Celâli ve'l-İkrâm","El-Muksit","El-Câmi'","El-Ganiyy","El-Muğnî","El-Mâni'",
                     "Ed-Dârr","En-Nâfi'","En-Nûr","El-Hâdî","El-Bedî'","El-Bâkî","El-Vâris","Er-Reşîd","Es-Sabûr"
                 )
+                val saved=prefs.getStringSet("favorite_names",emptySet())?.toMutableSet() ?: mutableSetOf()
+                val onlyFavorites=CheckBox(this).apply {
+                    text="Yalnızca favorilerim"
+                    setTextColor(gold)
+                }
+                root.addView(onlyFavorites)
                 val search=EditText(this).apply {
-                    hint="İsim ara..."
+                    hint="İsim veya sıra numarası ara..."
                     setSingleLine(true)
                     setTextColor(white)
                     setHintTextColor(Color.LTGRAY)
@@ -404,14 +410,32 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(results)
                 fun fill(query:String) {
                     results.removeAllViews()
+                    var count=0
                     names99.forEachIndexed { index,name ->
-                        if(query.isBlank() || name.contains(query,true) || (index+1).toString()==query.trim()) {
-                            results.addView(panel().apply {
-                                addView(text("${index+1}. $name",18f,gold))
-                            })
+                        if((!onlyFavorites.isChecked || saved.contains(index.toString())) &&
+                            (query.isBlank() || name.contains(query,true) || (index+1).toString()==query.trim())) {
+                            count++
+                            val card=panel()
+                            card.addView(text("${index+1}. $name",19f,gold))
+                            val buttons=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
+                            buttons.addView(button(if(saved.contains(index.toString())) "★ Favoride" else "☆ Favoriye ekle") {
+                                val key=index.toString()
+                                if(!saved.add(key)) saved.remove(key)
+                                prefs.edit().putStringSet("favorite_names",saved.toSet()).apply()
+                                fill(search.text.toString())
+                            },LinearLayout.LayoutParams(0,-2,1f))
+                            buttons.addView(button("Kopyala") {
+                                val clipboard=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText("Esmaül Hüsna",name))
+                                Toast.makeText(this@MainActivity,"İsim kopyalandı",Toast.LENGTH_SHORT).show()
+                            },LinearLayout.LayoutParams(0,-2,1f))
+                            card.addView(buttons)
+                            results.addView(card)
                         }
                     }
+                    if(count==0) results.addView(text("Bu filtreyle eşleşen isim bulunamadı.",15f))
                 }
+                onlyFavorites.setOnCheckedChangeListener { _,_ -> fill(search.text.toString()) }
                 search.addTextChangedListener(object:android.text.TextWatcher {
                     override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int) {}
                     override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int) { fill(s?.toString() ?: "") }
