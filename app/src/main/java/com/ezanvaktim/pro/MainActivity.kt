@@ -174,6 +174,18 @@ class MainActivity : Activity(), SensorEventListener {
                     prefs.edit().putInt("mode",spinner.selectedItemPosition).apply()
                     Toast.makeText(this,"Ezan modu kaydedildi",Toast.LENGTH_SHORT).show()
                 })
+                if(Build.VERSION.SDK_INT>=31) {
+                    val alarms=getSystemService(ALARM_SERVICE) as AlarmManager
+                    val allowed=alarms.canScheduleExactAlarms()
+                    root.addView(text(if(allowed) "✓ Dakik alarm izni açık" else "⚠ Dakik alarm izni kapalı. Ezan bildirimi gecikebilir.",16f,if(allowed) gold else Color.rgb(255,185,125)))
+                    if(!allowed) root.addView(button("Dakik alarm iznini aç") {
+                        try { startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,Uri.parse("package:$packageName"))) }
+                        catch(_:Exception) { Toast.makeText(this,"Ayarlar > Uygulamalar > Özel erişim > Alarmlar ve hatırlatıcılar",Toast.LENGTH_LONG).show() }
+                    })
+                }
+                if(Build.VERSION.SDK_INT>=33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) {
+                    root.addView(button("Bildirim iznini aç") { requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS),20) })
+                }
                 root.addView(text("NAMAZ BAZINDA BİLDİRİMLER",19f,gold))
                 listOf("İmsak","Öğle","İkindi","Akşam","Yatsı").forEach { prayer ->
                     root.addView(CheckBox(this).apply {
@@ -395,7 +407,8 @@ object AlarmScheduler {
             val pending=PendingIntent.getBroadcast(context,index,intent,PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
             val epoch=time.atZone(ZoneId.systemDefault()).toInstant().toEpochMilli()
             if(Build.VERSION.SDK_INT>=31 && !manager.canScheduleExactAlarms()) manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,epoch,pending)
-            else manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,epoch,pending)
+            else try { manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,epoch,pending) }
+            catch(_:SecurityException) { manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,epoch,pending) }
         }
     }
     fun scheduleRefresh(context:Context) {
