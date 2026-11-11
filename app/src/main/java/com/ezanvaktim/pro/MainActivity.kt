@@ -699,6 +699,13 @@ class MainActivity : Activity(), SensorEventListener {
                                 clipboard.setPrimaryClip(ClipData.newPlainText("Esmaül Hüsna",name))
                                 Toast.makeText(this@MainActivity,"İsim kopyalandı",Toast.LENGTH_SHORT).show()
                             },LinearLayout.LayoutParams(0,-2,1f))
+                            buttons.addView(button("Paylaş") {
+                                val send=Intent(Intent.ACTION_SEND).apply {
+                                    type="text/plain"
+                                    putExtra(Intent.EXTRA_TEXT,name+" — "+(nameMeanings.getOrNull(index) ?: ""))
+                                }
+                                startActivity(Intent.createChooser(send,"İsmi paylaş"))
+                            },LinearLayout.LayoutParams(0,-2,1f))
                             card.addView(buttons)
                             results.addView(card)
                         }
