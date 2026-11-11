@@ -333,6 +333,13 @@ class MainActivity : Activity(), SensorEventListener {
                     }
                     startActivity(Intent.createChooser(share,"Uygulamayı paylaş"))
                 })
+                root.addView(panel().apply {
+                    addView(text("Vakit verisi durumu",19f,gold))
+                    val last=prefs.getLong("last_successful_refresh",0L)
+                    val status=if(last==0L) "Henüz arka plan yenileme kaydı yok" else "Son başarılı arka plan yenilemesi: "+java.text.SimpleDateFormat("dd.MM.yyyy HH:mm",Locale("tr","TR")).format(java.util.Date(last))
+                    addView(text(status,14f,white))
+                    addView(text("Bağlantı kesilirse yenileme 30 dakika sonra tekrar denenecek.",14f))
+                })
                 root.addView(button("Alarm ve bildirim ayarları") { section="Ezan"; render() })
                 root.addView(button("Widget ayarları") { section="Widget"; render() })
                 root.addView(text("Not: Telefonun pil tasarrufu ve bildirim izinleri ezan uyarılarının zamanında çalışmasını etkileyebilir.",14f))
@@ -1027,7 +1034,7 @@ object PrayerRefresh {
         AlarmScheduler.schedule(context,schedule)
         AlarmScheduler.scheduleRefresh(context)
         PrayerWidget.refreshAll(context)
-        prefs.edit().putBoolean("needs_refresh",false).apply()
+        prefs.edit().putBoolean("needs_refresh",false).putLong("last_successful_refresh",System.currentTimeMillis()).apply()
     }
 }
 
