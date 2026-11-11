@@ -999,6 +999,9 @@ object AlarmScheduler {
 }
 
 object PrayerRefresh {
+    private fun isValidPrayerClock(value:String):Boolean = try {
+        LocalTime.parse(value.take(5)); true
+    } catch(_:Exception) { false }
     private fun scheduleRefreshRetrySafely(context:Context) {
         try { AlarmScheduler.scheduleRefreshRetry(context) } catch(_:Exception) { }
     }
@@ -1027,18 +1030,22 @@ object PrayerRefresh {
         val today=LocalDate.now()
         val cacheKey="times_${today}_${lat}_${lon}"
         val cached=prefs.getString(cacheKey,null)
-        val timings=if(cached!=null) JSONObject(cached) else {
+        val timings=if(cached!=null) try {
+            JSONObject(cached).takeIf { obj -> keys.all { key -> isValidPrayerClock(obj.optString(key)) } }
+        } catch(_:Exception) { null } else null
+        val validTimings=timings ?: run {
             val date=today.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
             val url=URL("https://api.aladhan.com/v1/timings/$date?latitude=$lat&longitude=$lon&method=13")
             val connection=url.openConnection().apply { connectTimeout=12000; readTimeout=12000 }
             JSONObject(connection.getInputStream().bufferedReader().use { it.readText() }).getJSONObject("data").getJSONObject("timings").also {
+                if(!keys.all { key -> isValidPrayerClock(it.optString(key)) }) throw IllegalStateException("Eksik vakit verisi")
                 prefs.edit().putString(cacheKey,it.toString()).apply()
             }
         }
-        if(!keys.all { key -> Regex("^\\d{2}:\\d{2}").containsMatchIn(timings.optString(key)) }) throw IllegalStateException("Eksik vakit verisi")
+
         val schedule=keys.mapIndexedNotNull { index,key ->
             if(index==1) null else try {
-                names[index] to LocalDateTime.of(today,LocalTime.parse(timings.getString(key).take(5)))
+                names[index] to LocalDateTime.of(today,LocalTime.parse(validTimings.getString(key).take(5)))
             } catch(_:Exception) { null }
         }
         AlarmScheduler.schedule(context,schedule)
