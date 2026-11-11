@@ -257,6 +257,21 @@ class MainActivity : Activity(), SensorEventListener {
                 if(Build.VERSION.SDK_INT>=33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)!=PackageManager.PERMISSION_GRANTED) {
                     root.addView(button("Bildirim iznini aç") { requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS),20) })
                 }
+                root.addView(panel().apply {
+                    addView(text("Bildirim kontrolü",19f,gold))
+                    val notificationsAllowed=Build.VERSION.SDK_INT<33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED
+                    addView(text(if(notificationsAllowed) "✓ Bildirim izni hazır" else "⚠ Bildirim izni gerekli",15f,if(notificationsAllowed) accent else Color.rgb(255,185,125)))
+                    addView(text("Ezan uyarılarının gecikmemesi için telefonun pil optimizasyonu ayarlarını kontrol edin.",14f))
+                    addView(button("Uygulama bildirim ayarlarını aç") {
+                        try {
+                            startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE,packageName))
+                        } catch(_:Exception) { Toast.makeText(this@MainActivity,"Bildirim ayarları açılamadı",Toast.LENGTH_SHORT).show() }
+                    })
+                    addView(button("Pil optimizasyonu ayarlarını aç") {
+                        try { startActivity(Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS)) }
+                        catch(_:Exception) { Toast.makeText(this@MainActivity,"Pil ayarları açılamadı",Toast.LENGTH_SHORT).show() }
+                    })
+                })
                 root.addView(text("NAMAZ BAZINDA BİLDİRİMLER",19f,gold))
                 listOf("İmsak","Öğle","İkindi","Akşam","Yatsı").forEach { prayer ->
                     root.addView(CheckBox(this).apply {
