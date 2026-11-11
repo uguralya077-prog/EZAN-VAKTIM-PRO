@@ -1175,8 +1175,9 @@ class AlarmReceiver: android.content.BroadcastReceiver() {
             catch(_:Exception) { }
         }
         val manager=context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-        val note=Notification.Builder(context,CHANNEL).setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentTitle("$name vakti").setContentText("Namaz vakti geldi").setAutoCancel(true).build()
-        manager.notify(name.hashCode(),note)
+        val openApp=PendingIntent.getActivity(context,0,Intent(context,MainActivity::class.java).apply { flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP },PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        val note=Notification.Builder(context,CHANNEL).setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentTitle("$name vakti").setContentText("Namaz vakti geldi").setContentIntent(openApp).setAutoCancel(true).build()
+        try { manager.notify(name.hashCode(),note) } catch(_:SecurityException) { }
     }
 }
 
