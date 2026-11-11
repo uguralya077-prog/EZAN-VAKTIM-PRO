@@ -263,17 +263,67 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(text("Görüntülenen içerik Diyanet'in çevrim içi hizmetidir; uygulamanın yerel çevrim dışı Kur'an veritabanı henüz bulunmuyor.",13f))
             }
             "Dualar" -> {
-                root.addView(text("GÜNLÜK DUALAR",23f,gold))
-                listOf(
-                    "Yemekten önce" to "Bismillâhirrahmânirrahîm.",
-                    "Yemekten sonra" to "Elhamdülillâh.",
-                    "Bağışlanma" to "Estağfirullâhel azîm ve etûbü ileyh.",
-                    "Günlük zikir" to "Sübhânallâh • Elhamdülillâh • Allâhu ekber"
-                ).forEach { (title,body) ->
-                    root.addView(text(title,19f,gold))
-                    root.addView(text(body,17f))
+                root.addView(text("GÜNLÜK DUALAR VE ZİKİRLER",23f,gold))
+                root.addView(text("Kolay erişim için konulara ayrılmış başlangıç koleksiyonu",15f))
+                val duas=listOf(
+                    Triple("Başlarken","Besmele","Bismillâhirrahmânirrahîm."),
+                    Triple("Yemek","Yemekten önce","Bismillâh."),
+                    Triple("Yemek","Yemekten sonra","Elhamdülillâh."),
+                    Triple("Bağışlanma","İstiğfar","Estağfirullâh."),
+                    Triple("Zikir","Tesbih","Sübhânallâh."),
+                    Triple("Zikir","Hamd","Elhamdülillâh."),
+                    Triple("Zikir","Tekbir","Allâhu ekber."),
+                    Triple("Zikir","Tevhid","Lâ ilâhe illallâh."),
+                    Triple("Salavat","Salavat","Allâhümme salli alâ Muhammed."),
+                    Triple("Kur'an","Rabbena âtinâ (Bakara 2:201)","Rabbenâ âtinâ fid-dünyâ haseneten ve fil-âhireti haseneten ve kınâ azâben-nâr."),
+                    Triple("Kur'an","İlim duası (Tâhâ 20:114)","Rabbi zidnî ilmâ."),
+                    Triple("Kur'an","Bağışlanma (A'râf 7:23)","Rabbenâ zalemnâ enfüsenâ ve in lem tağfir lenâ ve terhamnâ le-nekûnenne minel hâsirîn.")
+                )
+                val categories=listOf("Tümü")+duas.map { it.first }.distinct()
+                val category=Spinner(this).apply {
+                    adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,categories)
                 }
-                root.addView(text("Bu başlangıç listesidir; kapsamlı ve kaynaklı dua kataloğu henüz eklenmedi.",13f))
+                root.addView(category)
+                val search=EditText(this).apply {
+                    hint="Dua veya konu ara"
+                    setSingleLine(true)
+                    setTextColor(white)
+                    setHintTextColor(Color.LTGRAY)
+                }
+                root.addView(search)
+                val results=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
+                root.addView(results)
+                fun refreshDuas() {
+                    results.removeAllViews()
+                    val selected=categories[category.selectedItemPosition]
+                    val query=search.text.toString().trim()
+                    duas.filter { (group,title,body) ->
+                        (selected=="Tümü" || selected==group) &&
+                        (query.isEmpty() || title.contains(query,true) || body.contains(query,true) || group.contains(query,true))
+                    }.forEach { (group,title,body) ->
+                        results.addView(panel().apply {
+                            addView(text(group.uppercase(Locale("tr","TR")),13f,gold))
+                            addView(text(title,19f,white))
+                            addView(text(body,17f,gold))
+                            addView(button("Metni kopyala") {
+                                val clipboard=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                clipboard.setPrimaryClip(ClipData.newPlainText(title,body))
+                                Toast.makeText(this@MainActivity,"Dua kopyalandı",Toast.LENGTH_SHORT).show()
+                            })
+                        })
+                    }
+                }
+                category.onItemSelectedListener=object:android.widget.AdapterView.OnItemSelectedListener {
+                    override fun onNothingSelected(parent:android.widget.AdapterView<*>?) {}
+                    override fun onItemSelected(parent:android.widget.AdapterView<*>?,view:android.view.View?,position:Int,id:Long) { refreshDuas() }
+                }
+                search.addTextChangedListener(object:android.text.TextWatcher {
+                    override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int) {}
+                    override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int) { refreshDuas() }
+                    override fun afterTextChanged(s:android.text.Editable?) {}
+                })
+                refreshDuas()
+                root.addView(text("Bu seçki tam Hisnü'l-Müslim kataloğu değildir. Arapça asıllar, anlamlar ve kaynak denetimi ilerleyen aşamada eklenecektir.",13f))
             }
             "Zikir" -> {
                 zikrCount=prefs.getInt("zikr_count",0)
