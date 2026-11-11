@@ -455,6 +455,19 @@ class MainActivity : Activity(), SensorEventListener {
                         }
                     })
                 }
+                root.addView(panel().apply {
+                    addView(text("EZAN SESİNİ TELEFONA İNDİR",19f,gold))
+                    addView(text("İzinli bir MP3 ezan kaydının HTTPS bağlantısını girin. Dosya telefona indirilir ve çevrim dışı kullanılır.",14f))
+                    val address=EditText(this@MainActivity).apply {
+                        hint="https://.../ezan.mp3"
+                        setSingleLine(true)
+                        inputType=android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_VARIATION_URI
+                    }
+                    addView(address)
+                    addView(button("⬇ Tam ezan olarak indir") { downloadAdhan(address.text.toString(),"full") })
+                    addView(button("⬇ Kısa ezan olarak indir") { downloadAdhan(address.text.toString(),"short") })
+                    addView(text("Not: Uygulama henüz hazır bir ezan kayıt kataloğu sunmuyor. Kayıtların kullanım iznine dikkat edin.",13f))
+                })
                 root.addView(button("Tam ezan dosyası seç") { pickAudio(pickFull) })
                 root.addView(button("Kısa ezan dosyası seç") { pickAudio(pickShort) })
                 root.addView(text("SES ÖN İZLEMESİ",19f,gold))
@@ -1423,6 +1436,61 @@ class MainActivity : Activity(), SensorEventListener {
                 })
                 fill("")
                 root.addView(text("İsimlerin farklı kaynaklarda yazılışları değişebilir. Açıklamalar ve kaynak denetimi ayrıca eklenecek.",13f))
+            }
+        }
+    }
+    private fun downloadAdhan(raw:String,key:String) {
+        val source=raw.trim()
+        val uri=Uri.parse(source)
+        if(uri.scheme!="https" || uri.host.isNullOrBlank()) {
+            Toast.makeText(this,"Geçerli bir HTTPS MP3 bağlantısı girin",Toast.LENGTH_LONG).show()
+            return
+        }
+        Toast.makeText(this,"Ezan kaydı indiriliyor…",Toast.LENGTH_SHORT).show()
+        thread {
+            val destination=java.io.File(filesDir,"adhan_${key}.mp3")
+            val temp=java.io.File(filesDir,"adhan_${key}.download")
+            try {
+                val conn=URL(source).openConnection() as java.net.HttpURLConnection
+                conn.connectTimeout=12000
+                conn.readTimeout=20000
+                conn.instanceFollowRedirects=true
+                try {
+                    if(conn.responseCode !in 200..299) error("HTTP ${conn.responseCode}")
+                    val size=conn.contentLengthLong
+                    if(size>30L*1024*1024) error("Dosya 30 MB sınırını aşıyor")
+                    var count=0L
+                    conn.inputStream.use { input ->
+                        temp.outputStream().use { output ->
+                            val buffer=ByteArray(8192)
+                            while(true) {
+                                val n=input.read(buffer)
+                                if(n<0) break
+                                count+=n
+                                if(count>30L*1024*1024) error("Dosya 30 MB sınırını aşıyor")
+                                output.write(buffer,0,n)
+                            }
+                        }
+                    }
+                    if(count<1024) error("Ses dosyası boş veya geçersiz")
+                    val probe=android.media.MediaMetadataRetriever()
+                    try {
+                        probe.setDataSource(temp.absolutePath)
+                        if(probe.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION).isNullOrBlank())
+                            error("Dosya geçerli bir ses kaydı değil")
+                    } finally { probe.release() }
+                    if(destination.exists()) destination.delete()
+                    if(!temp.renameTo(destination)) error("Ses dosyası kaydedilemedi")
+                    prefs.edit().putString(key,Uri.fromFile(destination).toString()).apply()
+                    runOnUiThread {
+                        Toast.makeText(this,"Ezan indirildi. Çevrim dışı kullanılabilir.",Toast.LENGTH_LONG).show()
+                    }
+                } finally { conn.disconnect() }
+            } catch(e:Exception) {
+                temp.delete()
+                runOnUiThread {
+                    Toast.makeText(this,"Ezan indirilemedi: ${e.message}",Toast.LENGTH_LONG).show()
+                }
             }
         }
     }
