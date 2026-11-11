@@ -482,7 +482,7 @@ class MainActivity : Activity(), SensorEventListener {
                     }
                 })
                 root.addView(button("Çevrim dışı son okunan sûreye git") {
-                    if(java.io.File(filesDir,"quran_import.json").exists()) {
+                    if(java.io.File(filesDir,"quran_import.json").exists() || assets.list("")?.contains("quran_arabic.json")==true) {
                         section="İçe Aktarılan Sûre"
                         render()
                     } else Toast.makeText(this,"Önce 114 sûre dosyasını içe aktarın",Toast.LENGTH_LONG).show()
@@ -578,11 +578,8 @@ class MainActivity : Activity(), SensorEventListener {
             "İçe Aktarılan Kur'an" -> {
                 root.addView(button("← Kur'an menüsüne dön") { section="Kur'an"; render() })
                 root.addView(text("ÇEVRİM DIŞI KUR'AN OKUYUCU",23f,gold))
-                val file=java.io.File(filesDir,"quran_import.json")
-                if(!file.exists()) {
-                    root.addView(text("Henüz 114 sûre içeren doğrulanmış bir metin dosyası içe aktarılmadı.",16f))
-                } else try {
-                    val imported=JSONObject(file.readText(Charsets.UTF_8))
+                try {
+                    val imported=loadBundledOrImportedQuran()
                     val items=imported.getJSONArray("surahs")
                     val source=imported.optString("source","").trim()
                     val translationSource=imported.optString("translation_source","").trim()
@@ -688,7 +685,7 @@ class MainActivity : Activity(), SensorEventListener {
             "İçe Aktarılan Sûre" -> {
                 root.addView(button("← Sûre listesine dön") { section="İçe Aktarılan Kur'an"; render() })
                 try {
-                    val items=JSONObject(java.io.File(filesDir,"quran_import.json").readText(Charsets.UTF_8)).getJSONArray("surahs")
+                    val items=loadBundledOrImportedQuran().getJSONArray("surahs")
                     val index=prefs.getInt("quran_import_last",0).coerceIn(0,113)
                     val surah=items.getJSONObject(index)
                     root.addView(text("${index+1}. ${surah.getString("name")}",23f,gold))
@@ -711,7 +708,7 @@ class MainActivity : Activity(), SensorEventListener {
 
                     val verses=surah.getJSONArray("verses")
                     val translations=surah.optJSONArray("translations")
-                    val source=JSONObject(java.io.File(filesDir,"quran_import.json").readText(Charsets.UTF_8))
+                    val source=loadBundledOrImportedQuran()
                     val attribution=source.optString("source","").trim()
                     val translationSource=source.optString("translation_source","").trim()
                     if(attribution.isNotBlank()) root.addView(text("Arapça metin kaynağı: $attribution",13f,accent))
@@ -1312,6 +1309,12 @@ class MainActivity : Activity(), SensorEventListener {
     override fun onRequestPermissionsResult(requestCode:Int,permissions:Array<out String>,grantResults:IntArray) {
         super.onRequestPermissionsResult(requestCode,permissions,grantResults)
         if(requestCode==21 && grantResults.any { it==PackageManager.PERMISSION_GRANTED }) locate()
+    }
+    private fun loadBundledOrImportedQuran():JSONObject {
+        val imported=java.io.File(filesDir,"quran_import.json")
+        val raw=if(imported.exists()) imported.readText(Charsets.UTF_8)
+            else assets.open("quran_arabic.json").bufferedReader(Charsets.UTF_8).use { it.readText() }
+        return JSONObject(raw)
     }
     private fun loadTimes() {
         val date=LocalDate.now().format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
