@@ -4,6 +4,8 @@ import android.Manifest
 import android.app.*
 import android.content.*
 import android.content.pm.PackageManager
+import android.graphics.Canvas
+import android.graphics.Paint
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
@@ -42,6 +44,7 @@ class MainActivity : Activity(), SensorEventListener {
     private var latitude = 37.5753
     private var longitude = 36.9228
     private var bearing = 0.0
+    private var dial: QiblaDial? = null
     private var locationLabel = "Kahramanmaraş (örnek konum)"
     private val gold = Color.rgb(215,181,109)
     private val white = Color.rgb(241,244,239)
@@ -99,6 +102,7 @@ class MainActivity : Activity(), SensorEventListener {
         timerHandler.removeCallbacks(timerTick)
         timerTarget=null
         timerLabel=null
+        dial=null
         val outer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(7,19,15)) }
         val header = text("☪  EZAN VAKTİM PRO", 25f, gold).apply {
             gravity = Gravity.CENTER; setTypeface(null, Typeface.BOLD)
@@ -188,7 +192,9 @@ class MainActivity : Activity(), SensorEventListener {
             }
             "Kıble" -> {
                 root.addView(text("KIBLE PUSULASI",23f,gold))
-                compass=text("Telefonu düz tutun. Sensör bekleniyor…",22f,gold).apply {
+                dial=QiblaDial(this)
+                root.addView(dial,LinearLayout.LayoutParams(-1,(resources.displayMetrics.density*300).toInt()))
+                compass=text("Telefonu düz tutun. Sensör bekleniyor…",18f,gold).apply {
                     gravity=Gravity.CENTER; minHeight=280
                 }
                 root.addView(compass)
@@ -516,9 +522,49 @@ class MainActivity : Activity(), SensorEventListener {
         bearing=(Math.toDegrees(atan2(sin(lonDiff),cos(lat1)*tan(lat2)-sin(lat1)*cos(lonDiff)))+360)%360
         val relative=(bearing-azimuth+360)%360
         if(section!="Kıble") return
+        dial?.angle=relative.toFloat()
         compass.text="🕋\nKıble: %.1f° (gerçek kuzey)\nPusula yönü: %.1f° (manyetik)\nKıbleye dönüş: %.1f° sağa".format(Locale.getDefault(),bearing,azimuth,relative)
     }
     override fun onAccuracyChanged(sensor:Sensor?,accuracy:Int) {}
+}
+ 
+class QiblaDial(context:Context):android.view.View(context) {
+    var angle:Float=0f
+        set(value) { field=value; invalidate() }
+    private val paint=Paint(Paint.ANTI_ALIAS_FLAG)
+    override fun onDraw(canvas:Canvas) {
+        super.onDraw(canvas)
+        val cx=width/2f
+        val cy=height/2f
+        val radius=minOf(width,height)*0.40f
+        paint.style=Paint.Style.STROKE
+        paint.strokeWidth=5f
+        paint.color=Color.rgb(205,172,104)
+        canvas.drawCircle(cx,cy,radius,paint)
+        paint.style=Paint.Style.FILL
+        paint.textAlign=Paint.Align.CENTER
+        paint.typeface=Typeface.DEFAULT_BOLD
+        paint.textSize=radius*0.17f
+        paint.color=Color.WHITE
+        canvas.drawText("K",cx,cy-radius+radius*0.20f,paint)
+        canvas.drawText("G",cx,cy+radius-radius*0.08f,paint)
+        canvas.drawText("D",cx+radius-radius*0.12f,cy+radius*0.06f,paint)
+        canvas.drawText("B",cx-radius+radius*0.12f,cy+radius*0.06f,paint)
+        canvas.save()
+        canvas.rotate(angle,cx,cy)
+        val path=android.graphics.Path().apply {
+            moveTo(cx,cy-radius*0.82f)
+            lineTo(cx-radius*0.16f,cy+radius*0.25f)
+            lineTo(cx,cy+radius*0.09f)
+            lineTo(cx+radius*0.16f,cy+radius*0.25f)
+            close()
+        }
+        paint.color=Color.rgb(222,184,98)
+        canvas.drawPath(path,paint)
+        canvas.restore()
+        paint.textSize=radius*0.14f
+        canvas.drawText("KIBLE",cx,cy+radius*0.65f,paint)
+    }
 }
 
 object AlarmScheduler {
