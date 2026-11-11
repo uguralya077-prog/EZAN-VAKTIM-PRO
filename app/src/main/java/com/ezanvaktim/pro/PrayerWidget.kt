@@ -26,6 +26,11 @@ class PrayerWidget:AppWidgetProvider() {
         }
     }
     companion object {
+        fun refreshAll(context:Context) {
+            val manager=AppWidgetManager.getInstance(context)
+            val ids=manager.getAppWidgetIds(android.content.ComponentName(context,PrayerWidget::class.java))
+            ids.forEach { updateWidget(context,manager,it) }
+        }
         fun updateWidget(context:Context,manager:AppWidgetManager,id:Int) {
             val prefs=context.getSharedPreferences("ezan_settings",Context.MODE_PRIVATE)
             val lat=java.lang.Double.longBitsToDouble(prefs.getLong("lat",java.lang.Double.doubleToRawLongBits(37.5753)))
