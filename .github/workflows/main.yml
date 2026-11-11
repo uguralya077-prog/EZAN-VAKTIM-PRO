@@ -21,6 +21,8 @@ jobs:
           gradle-version: '8.9'
       - name: Read-only Quran regression checks
         run: python3 scripts/check_quran_integrity.py
+      - name: Prepare verified offline Arabic Quran
+        run: python3 scripts/prepare_quran_asset.py
       - name: Build APK
         run: gradle --no-daemon :app:assembleDebug --stacktrace
       - name: Verify APK output
