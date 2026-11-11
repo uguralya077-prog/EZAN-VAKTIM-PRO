@@ -1223,11 +1223,13 @@ class AdhanService: Service() {
     override fun onStartCommand(intent:Intent?,flags:Int,startId:Int):Int {
         val name=intent?.getStringExtra("name") ?: "Namaz"
         val note=Notification.Builder(this,CHANNEL).setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentTitle("$name ezanı").setContentText("Ezan çalınıyor").build()
-        startForeground(1001,note)
+        try { startForeground(1001,note) }
+        catch(_:Exception) { stopSelf(startId); return START_NOT_STICKY }
         try {
             val uri=Uri.parse(intent?.getStringExtra("audio") ?: error("Ses dosyası yok"))
             player?.release()
             player=android.media.MediaPlayer().apply {
+                setAudioAttributes(android.media.AudioAttributes.Builder().setUsage(android.media.AudioAttributes.USAGE_ALARM).setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build())
                 setDataSource(this@AdhanService,uri)
                 setOnCompletionListener { stopSelf() }
                 setOnErrorListener { _,_,_ -> stopSelf(); true }
