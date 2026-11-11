@@ -603,6 +603,14 @@ class MainActivity : Activity(), SensorEventListener {
 
                     val verses=surah.getJSONArray("verses")
                     val translations=surah.optJSONArray("translations")
+                    val source=JSONObject(java.io.File(filesDir,"quran_import.json").readText(Charsets.UTF_8))
+                    val attribution=source.optString("source","").trim()
+                    val translationSource=source.optString("translation_source","").trim()
+                    if(attribution.isNotBlank()) root.addView(text("Arapça metin kaynağı: $attribution",13f,accent))
+                    if(translations!=null && translationSource.isNotBlank()) root.addView(text("Meal kaynağı: $translationSource",13f,accent))
+                    val bookmarkedVerse=prefs.getInt("quran_bookmark_${index}",-1)
+                    val bookmarkStatus=text(if(bookmarkedVerse in 0 until verses.length()) "İşaretli ayet: ${bookmarkedVerse+1}" else "Bu sûrede işaretli ayet yok",14f,accent)
+                    root.addView(bookmarkStatus)
                     val mealToggle=CheckBox(this).apply {
                         text="Türkçe meali göster"
                         setTextColor(white)
@@ -616,9 +624,17 @@ class MainActivity : Activity(), SensorEventListener {
                     fun drawVerses() {
                         verseContainer.removeAllViews()
                         for(v in 0 until verses.length()) {
-                            verseContainer.addView(text("${verses.getString(v)}  ﴿${v+1}﴾",26f).apply {
+                            verseContainer.addView(text("${if(prefs.getInt("quran_bookmark_${index}",-1)==v) "★ " else ""}${verses.getString(v)}  ﴿${v+1}﴾",26f).apply {
                                 gravity=Gravity.RIGHT
                                 textDirection=android.view.View.TEXT_DIRECTION_RTL
+                                setOnClickListener {
+                                    val key="quran_bookmark_${index}"
+                                    val previous=prefs.getInt(key,-1)
+                                    val next=if(previous==v) -1 else v
+                                    prefs.edit().putInt(key,next).apply()
+                                    bookmarkStatus.text=if(next>=0) "İşaretli ayet: ${next+1}" else "Bu sûrede işaretli ayet yok"
+                                    drawVerses()
+                                }
                             })
                             if(mealToggle.isChecked && translations!=null) {
                                 verseContainer.addView(text("${v+1}. ${translations.getString(v)}",16f,accent))
@@ -1041,7 +1057,10 @@ class MainActivity : Activity(), SensorEventListener {
                     output.toByteArray()
                 } ?: throw IllegalArgumentException("Dosya açılamadı")
                 val raw=bytes.toString(Charsets.UTF_8)
-                val surahs=JSONObject(raw).getJSONArray("surahs")
+                val metadata=JSONObject(raw)
+                if(metadata.has("source") && metadata.getString("source").length>500) throw IllegalArgumentException("Kaynak bilgisi çok uzun")
+                if(metadata.has("translation_source") && metadata.getString("translation_source").length>500) throw IllegalArgumentException("Meal kaynak bilgisi çok uzun")
+                val surahs=metadata.getJSONArray("surahs")
                 if(surahs.length()!=114) throw IllegalArgumentException("Tam 114 sûre gerekli")
                 val canonicalAyahCounts=intArrayOf(
                     7,286,200,176,120,165,206,75,129,109,123,111,43,52,99,128,111,110,98,135,
