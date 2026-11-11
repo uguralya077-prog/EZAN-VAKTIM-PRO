@@ -159,6 +159,11 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(heading)
                 root.addView(text(LocalDate.now().format(DateTimeFormatter.ofPattern("EEEE, d MMMM yyyy",Locale("tr","TR"))),17f,white).apply { gravity=Gravity.CENTER })
                 root.addView(button("📍 Konumumu kullan") { locate() })
+                root.addView(button("↻ Vakitleri internetten yenile") {
+                    val key="times_${LocalDate.now()}_${latitude}_${longitude}"
+                    prefs.edit().remove(key).apply()
+                    loadTimes()
+                })
                 root.addView(button("Şehir / koordinat seç") {
                     val latInput=EditText(this).apply { hint="Enlem (ör. 37.5753)"; setText(latitude.toString()); inputType=android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED }
                     val lonInput=EditText(this).apply { hint="Boylam (ör. 36.9228)"; setText(longitude.toString()); inputType=android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED }
