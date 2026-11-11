@@ -272,6 +272,26 @@ class MainActivity : Activity(), SensorEventListener {
                         catch(_:Exception) { Toast.makeText(this@MainActivity,"Pil ayarları açılamadı",Toast.LENGTH_SHORT).show() }
                     })
                 })
+                root.addView(button("Bildirim testi gönder (sessiz)") {
+                    val allowed=Build.VERSION.SDK_INT<33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED
+                    val manager=getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+                    if(!allowed || !manager.areNotificationsEnabled()) {
+                        Toast.makeText(this,"Bildirim izni kapalı. Önce izni açın.",Toast.LENGTH_LONG).show()
+                    } else try {
+                        val open=PendingIntent.getActivity(this,0,Intent(this,MainActivity::class.java),PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+                        val notification=Notification.Builder(this,CHANNEL)
+                            .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
+                            .setContentTitle("Ezan Vaktim Pro • Test")
+                            .setContentText("Bildirim testi başarılı. Bu test ezan sesini ve zamanında alarmı doğrulamaz.")
+                            .setContentIntent(open)
+                            .setAutoCancel(true)
+                            .build()
+                        manager.notify(9901,notification)
+                        Toast.makeText(this,"Test bildirimi gönderildi",Toast.LENGTH_SHORT).show()
+                    } catch(_:Exception) {
+                        Toast.makeText(this,"Bildirim gönderilemedi; uygulama bildirim ayarlarını kontrol edin.",Toast.LENGTH_LONG).show()
+                    }
+                })
                 root.addView(text("NAMAZ BAZINDA BİLDİRİMLER",19f,gold))
                 listOf("İmsak","Öğle","İkindi","Akşam","Yatsı").forEach { prayer ->
                     root.addView(CheckBox(this).apply {
