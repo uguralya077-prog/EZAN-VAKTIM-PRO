@@ -238,6 +238,7 @@ class MainActivity : Activity(), SensorEventListener {
                     loadTimes()
                 },LinearLayout.LayoutParams(0,-2,1f))
                 root.addView(locationActions)
+                root.addView(button("🏙 Şehir adıyla ara") { findCity() })
                 root.addView(button("Şehir / koordinat seç") {
                     val latInput=EditText(this).apply { hint="Enlem (ör. 37.5753)"; setText(latitude.toString()); inputType=android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED }
                     val lonInput=EditText(this).apply { hint="Boylam (ör. 36.9228)"; setText(longitude.toString()); inputType=android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL or android.text.InputType.TYPE_NUMBER_FLAG_SIGNED }
@@ -279,6 +280,10 @@ class MainActivity : Activity(), SensorEventListener {
                     gravity=Gravity.CENTER; minHeight=280
                 }
                 root.addView(compass)
+                root.addView(text("Kâbe yönü: %.1f° (gerçek kuzeye göre)".format(Locale("tr","TR"),qiblaBearing()),17f,gold))
+                root.addView(button("📍 Konumumu güncelle") { locate() })
+                root.addView(button("🏙 Şehir adıyla konum bul") { findCity() })
+                root.addView(text("Pusulayı 8 şeklinde hareket ettirerek kalibre edin. Telefonu düz ve metalden uzakta tutun.",14f))
                 root.addView(text("Manyetik alan ve metal eşyalar pusula doğruluğunu etkileyebilir.",15f))
             }
             "Ezan" -> {
@@ -1386,6 +1391,60 @@ class MainActivity : Activity(), SensorEventListener {
             prefs.edit().putString(if(requestCode==pickFull) "full" else "short",uri.toString()).apply()
             Toast.makeText(this,"Ses kaydedildi",Toast.LENGTH_SHORT).show()
         }
+    }
+    private fun qiblaBearing():Double {
+        val lat1=Math.toRadians(latitude)
+        val lat2=Math.toRadians(21.4225)
+        val delta=Math.toRadians(39.8262-longitude)
+        return (Math.toDegrees(atan2(sin(delta),cos(lat1)*tan(lat2)-sin(lat1)*cos(delta)))+360)%360
+    }
+    private fun findCity() {
+        val input=EditText(this).apply {
+            hint="Örnek: İstanbul, Ankara, Berlin"
+            setSingleLine(true)
+            setPadding(28,24,28,24)
+        }
+        AlertDialog.Builder(this).setTitle("Şehir adıyla konum bul").setView(input)
+            .setNegativeButton("Vazgeç",null)
+            .setPositiveButton("Ara") { _,_ ->
+                val city=input.text.toString().trim()
+                if(city.length<2) {
+                    Toast.makeText(this,"En az iki harf girin",Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this,"Şehir aranıyor: $city",Toast.LENGTH_SHORT).show()
+                    thread {
+                        try {
+                            val coder=android.location.Geocoder(this,Locale("tr","TR"))
+                            @Suppress("DEPRECATION")
+                            val matches=coder.getFromLocationName(city,5) ?: emptyList()
+                            runOnUiThread {
+                                if(matches.isEmpty()) Toast.makeText(this,"Şehir bulunamadı; internet veya konum servisini kontrol edin",Toast.LENGTH_LONG).show()
+                                else {
+                                    val labels=matches.map { address ->
+                                        listOfNotNull(address.locality,address.adminArea,address.countryName).distinct().joinToString(", ")
+                                            .ifBlank { "%.4f, %.4f".format(Locale.US,address.latitude,address.longitude) }
+                                    }.toTypedArray()
+                                    AlertDialog.Builder(this).setTitle("Konumu seç")
+                                        .setItems(labels) { _,index ->
+                                            val selected=matches[index]
+                                            latitude=selected.latitude
+                                            longitude=selected.longitude
+                                            locationLabel=labels[index]
+                                            prefs.edit().putLong("lat",java.lang.Double.doubleToRawLongBits(latitude))
+                                                .putLong("lon",java.lang.Double.doubleToRawLongBits(longitude))
+                                                .putString("place",locationLabel).apply()
+                                            PrayerWidget.refreshAll(this)
+                                            section="Vakitler"
+                                            render()
+                                        }.setNegativeButton("Vazgeç",null).show()
+                                }
+                            }
+                        } catch(e:Exception) {
+                            runOnUiThread { Toast.makeText(this,"Şehir arama başarısız: ${e.message}",Toast.LENGTH_LONG).show() }
+                        }
+                    }
+                }
+            }.show()
     }
     private fun locate() {
         if(checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)!=PackageManager.PERMISSION_GRANTED) {
