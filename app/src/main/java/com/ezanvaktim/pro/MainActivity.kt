@@ -438,8 +438,8 @@ class MainActivity : Activity(), SensorEventListener {
             }
             "Kur'an" -> {
                 root.addView(text("KUR'AN-I KERİM",23f,gold))
-                root.addView(text("Diyanet Kur'an Portalı • Çevrim içi okuma",15f))
-                root.addView(text("Arapça metin ve Türkçe meal için Diyanet'in resmî sitesini uygulama içinde açabilirsiniz. İnternet bağlantısı gereklidir.",14f))
+                root.addView(text("114 sûre Arapça çevrim dışı okuma • Türkçe meal isteğe bağlı",15f))
+                root.addView(text("114 sûrelik Arapça metin uygulama paketinde bulunur ve internetsiz okunur. Türkçe meal için izinli bir çeviri dosyası içe aktarabilir veya Diyanet sitesini çevrim içi açabilirsiniz.",14f))
                 root.addView(button("Çevrim dışı kısa sûreler") {
                     section="Kısa Sûreler"
                     render()
@@ -487,11 +487,11 @@ class MainActivity : Activity(), SensorEventListener {
                         render()
                     } else Toast.makeText(this,"Önce 114 sûre dosyasını içe aktarın",Toast.LENGTH_LONG).show()
                 })
-                root.addView(button("İçe aktarılan çevrim dışı Kur'anı oku") {
+                root.addView(button("114 sûre çevrim dışı Kur'anı oku") {
                     section="İçe Aktarılan Kur'an"
                     render()
                 })
-                root.addView(text("UTF-8 JSON: 'surahs' dizisinde 114 sûre, her sûrede 'name' ve Arapça ayetlerden oluşan 'verses' bulunmalı. İsteğe bağlı 'translations' dizisi, ayetlerle aynı sayıda Türkçe meal içerebilir. Kaynak metnin doğruluğu ve kullanım izni dosyayı sağlayana aittir.",13f))
+                root.addView(text("Hazır Arapça metin: Quran Core Dataset (CC BY 4.0), Tanzil (CC BY 3.0). İçe aktarma isteğe bağlıdır; Türkçe mealin doğruluğu ve kullanım izni dosyayı sağlayana aittir.",13f))
                 root.addView(button("Kur'an okuma ekranını aç") {
                     section="Kur'an Oku"
                     render()
