@@ -829,6 +829,7 @@ class MainActivity : Activity(), SensorEventListener {
                     val verses=surah.getJSONArray("verses")
                     val translations=surah.optJSONArray("translations")
                     var onlineTranslations:org.json.JSONArray?=null
+                    var refreshVerseDisplay:(()->Unit)?=null
                     val source=loadBundledOrImportedQuran()
                     val attribution=source.optString("source","").trim()
                     val translationSource=source.optString("translation_source","").trim()
@@ -868,7 +869,7 @@ class MainActivity : Activity(), SensorEventListener {
                                             onlineTranslations=result
                                             mealToggle.isChecked=true
                                             mealStatus.text="Türkçe meal: Türkiye Diyanet Vakfı (Al Quran Cloud üzerinden). Çevrim içi gösterilir."
-                                            drawVerses()
+                                            refreshVerseDisplay?.invoke()
                                         }
                                     }
                                 } catch(e:Exception) {
@@ -925,6 +926,7 @@ class MainActivity : Activity(), SensorEventListener {
                             }
                         }
                     }
+                    refreshVerseDisplay={ drawVerses() }
                     fontControls.addView(button("A−") {
                         arabicSize=(arabicSize-2f).coerceAtLeast(18f)
                         prefs.edit().putFloat("quran_import_arabic_size",arabicSize).apply()
