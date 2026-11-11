@@ -398,6 +398,7 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(searchSurah)
                 val onlySurahFavorites=CheckBox(this).apply { text="Yalnızca favori sûreler"; setTextColor(gold) }
                 root.addView(onlySurahFavorites)
+                val lastReadLabel=text("Son okunan: "+(prefs.getString("last_read_surah",null) ?: "Henüz kaydedilmedi"),14f,accent)
                 val surahList=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
                 root.addView(surahList)
                 fun showSurahs(query:String) {
@@ -417,6 +418,7 @@ class MainActivity : Activity(), SensorEventListener {
                             })
                             addView(button("Okuduğum sûre olarak kaydet") {
                                 prefs.edit().putString("last_read_surah",title).apply()
+                                lastReadLabel.text="Son okunan: $title"
                                 Toast.makeText(this@MainActivity,"Okuma kaydedildi",Toast.LENGTH_SHORT).show()
                             })
                             addView(button("Metni kopyala") {
@@ -431,7 +433,16 @@ class MainActivity : Activity(), SensorEventListener {
                 fontControls.addView(button("A−") { surahFont=(surahFont-2).coerceAtLeast(19); prefs.edit().putInt("surah_font_size",surahFont).apply(); fontLabel.text="Arapça yazı boyutu: $surahFont"; showSurahs(searchSurah.text.toString()) },LinearLayout.LayoutParams(0,-2,1f))
                 fontControls.addView(button("A+") { surahFont=(surahFont+2).coerceAtMost(38); prefs.edit().putInt("surah_font_size",surahFont).apply(); fontLabel.text="Arapça yazı boyutu: $surahFont"; showSurahs(searchSurah.text.toString()) },LinearLayout.LayoutParams(0,-2,1f))
                 onlySurahFavorites.setOnCheckedChangeListener { _,_ -> showSurahs(searchSurah.text.toString()) }
-                root.addView(text("Son okunan: "+(prefs.getString("last_read_surah",null) ?: "Henüz kaydedilmedi"),14f,accent))
+                root.addView(lastReadLabel)
+                root.addView(button("Son okuduğum sûreyi göster") {
+                    val saved=prefs.getString("last_read_surah",null)
+                    if(saved==null) Toast.makeText(this,"Henüz sûre kaydedilmedi",Toast.LENGTH_SHORT).show()
+                    else {
+                        onlySurahFavorites.isChecked=false
+                        searchSurah.setText(saved.substringBefore(" • "))
+                    }
+                })
+
                 searchSurah.addTextChangedListener(object:android.text.TextWatcher {
                     override fun beforeTextChanged(s:CharSequence?,start:Int,count:Int,after:Int) {}
                     override fun onTextChanged(s:CharSequence?,start:Int,before:Int,count:Int) { showSurahs(s?.toString() ?: "") }
