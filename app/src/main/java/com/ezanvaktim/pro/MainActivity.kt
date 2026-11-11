@@ -595,6 +595,7 @@ class MainActivity : Activity(), SensorEventListener {
         timerHandler.post(timerTick)
         AlarmScheduler.schedule(this,schedule)
         AlarmScheduler.scheduleRefresh(this)
+        PrayerWidget.refreshAll(this)
     }
     override fun onResume() {
         super.onResume()
@@ -706,6 +707,7 @@ object PrayerRefresh {
             } catch(_:Exception) { null }
         }
         AlarmScheduler.schedule(context,schedule)
+        PrayerWidget.refreshAll(context)
     }
     fun refresh(context:Context) {
         val prefs=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
@@ -729,6 +731,7 @@ object PrayerRefresh {
         }
         AlarmScheduler.schedule(context,schedule)
         AlarmScheduler.scheduleRefresh(context)
+        PrayerWidget.refreshAll(context)
         prefs.edit().putBoolean("needs_refresh",false).apply()
     }
 }
