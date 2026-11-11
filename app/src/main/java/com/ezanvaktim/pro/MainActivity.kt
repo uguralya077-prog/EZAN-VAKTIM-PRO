@@ -82,7 +82,7 @@ class MainActivity : Activity(), SensorEventListener {
     }
 
     private fun text(s: String, size: Float = 18f, color: Int = white): TextView = TextView(this).apply {
-        text=s; textSize=size; setTextColor(color); setPadding(18,15,18,15)
+        text=s; textSize=size*prefs.getFloat("font_scale",1f); setTextColor(color); setPadding(18,15,18,15)
     }
     private fun panel(): LinearLayout = LinearLayout(this).apply {
         orientation=LinearLayout.VERTICAL
@@ -138,7 +138,8 @@ class MainActivity : Activity(), SensorEventListener {
                     "Günlük Dualar" to "Dualar",
                     "Dijital Tesbih" to "Zikir",
                     "Allah'ın 99 İsmi" to "99 İsim",
-                    "Ana Ekran Widget'ı" to "Widget"
+                    "Ana Ekran Widget'ı" to "Widget",
+                    "Görünüm ve Ayarlar" to "Ayarlar"
                 )
                 items.chunked(2).forEach { pair ->
                     val line=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
@@ -252,6 +253,42 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(button("■ Dinlemeyi durdur") { stopAudioPreview() })
                 root.addView(text("Ön izleme yalnızca seçtiğiniz yerel ses dosyasını çalar; alarmı başlatmaz.",13f))
                 root.addView(text("Ses çalmak için cihazınızdan bir ezan kaydı seçin. Namaz vakti bildirimleri Android izinlerine bağlıdır.",14f))
+            }
+            "Ayarlar" -> {
+                root.addView(text("GÖRÜNÜM VE AYARLAR",23f,gold))
+                root.addView(text("Yazı boyutu",19f,gold))
+                val sizes=listOf("Küçük" to 0.90f,"Normal" to 1.0f,"Büyük" to 1.15f,"Çok büyük" to 1.30f)
+                val sizeSpinner=Spinner(this).apply {
+                    adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,sizes.map { it.first })
+                    val current=prefs.getFloat("font_scale",1f)
+                    setSelection(sizes.indices.minByOrNull { kotlin.math.abs(sizes[it].second-current) } ?: 1)
+                }
+                root.addView(sizeSpinner)
+                root.addView(button("Yazı boyutunu uygula") {
+                    prefs.edit().putFloat("font_scale",sizes[sizeSpinner.selectedItemPosition].second).apply()
+                    render()
+                })
+                root.addView(panel().apply {
+                    addView(text("Konum ve gizlilik",19f,gold))
+                    addView(text("Vakit hesabı için seçilen koordinatlar ve tercihler cihazınızda saklanır. Vakitler AlAdhan servisi üzerinden hesaplanır; bu resmî Diyanet vakit listesi değildir.",14f))
+                })
+                root.addView(button("Kayıtlı konumu sıfırla") {
+                    AlertDialog.Builder(this).setTitle("Konumu sıfırla?")
+                        .setMessage("Seçili koordinatlar varsayılan örnek konuma dönecek. Diğer tercihler korunacak.")
+                        .setNegativeButton("Vazgeç",null)
+                        .setPositiveButton("Sıfırla") { _,_ ->
+                            latitude=37.5753
+                            longitude=36.9228
+                            locationLabel="Kahramanmaraş (örnek konum)"
+                            prefs.edit().remove("lat").remove("lon").remove("place").apply()
+                            PrayerWidget.refreshAll(this)
+                            section="Vakitler"
+                            render()
+                        }.show()
+                })
+                root.addView(button("Alarm ve bildirim ayarları") { section="Ezan"; render() })
+                root.addView(button("Widget ayarları") { section="Widget"; render() })
+                root.addView(text("Not: Telefonun pil tasarrufu ve bildirim izinleri ezan uyarılarının zamanında çalışmasını etkileyebilir.",14f))
             }
             "Widget" -> {
                 root.addView(text("ANA EKRAN NAMAZ VAKTİ WIDGET'I",23f,gold))
