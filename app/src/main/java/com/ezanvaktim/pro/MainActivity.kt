@@ -912,6 +912,25 @@ class MainActivity : Activity(), SensorEventListener {
             "Dualar" -> {
                 root.addView(text("GÜNLÜK DUALAR VE ZİKİRLER",23f,gold))
                 root.addView(text("Kolay erişim için konulara ayrılmış başlangıç koleksiyonu",15f))
+                root.addView(text("KUR'AN'DAN DUALAR • ARAPÇA VE TÜRKÇE ANLAMI",18f,gold))
+                val quranDuas=listOf(
+                    Triple("Bakara 2:201 • Dünya ve ahiret iyiliği","رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ","Rabbimiz! Bize dünyada iyilik, ahirette de iyilik ver; bizi ateşin azabından kor."),
+                    Triple("Tâhâ 20:114 • İlim","رَبِّ زِدْنِي عِلْمًا","Rabbim! İlmimi artır."),
+                    Triple("A'râf 7:23 • Bağışlanma","رَبَّنَا ظَلَمْنَا أَنْفُسَنَا وَإِنْ لَمْ تَغْفِرْ لَنَا وَتَرْحَمْنَا لَنَكُونَنَّ مِنَ الْخَاسِرِينَ","Rabbimiz! Biz kendimize zulmettik. Bizi bağışlamaz ve bize merhamet etmezsen mutlaka ziyana uğrayanlardan oluruz.")
+                )
+                quranDuas.forEach { (title,arabic,meaning) ->
+                    root.addView(panel().apply {
+                        addView(text(title,17f,gold))
+                        addView(text(arabic,24f,white).apply { gravity=Gravity.RIGHT; textDirection=android.view.View.TEXT_DIRECTION_RTL })
+                        addView(text(meaning,16f,white))
+                        addView(button("Duayı kopyala") {
+                            val clipboard=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                            clipboard.setPrimaryClip(ClipData.newPlainText(title,"$title\n$arabic\n$meaning"))
+                            Toast.makeText(this@MainActivity,"Dua kopyalandı",Toast.LENGTH_SHORT).show()
+                        })
+                    })
+                }
+
                 val duas=listOf(
                     Triple("Başlarken","Besmele","Bismillâhirrahmânirrahîm."),
                     Triple("Yemek","Yemekten önce","Bismillâh."),
