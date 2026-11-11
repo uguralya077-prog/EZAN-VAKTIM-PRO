@@ -362,11 +362,11 @@ class MainActivity : Activity(), SensorEventListener {
                 })
                 val syncStatus=text("Güncelleme için internet bağlantısı gerekir.",14f,accent)
                 root.addView(syncStatus)
-                root.addView(button("Namaz vakitlerini ve alarmları şimdi yenile") {
+                root.addView(button("Namaz vakitlerini sunucudan yeniden al ve alarmları güncelle") {
                     syncStatus.text="Namaz vakitleri güncelleniyor…"
                     thread {
                         try {
-                            PrayerRefresh.refresh(applicationContext)
+                            PrayerRefresh.refresh(applicationContext,forceNetwork=true)
                             runOnUiThread {
                                 syncStatus.text="Namaz vakitleri, alarmlar ve widget güncellendi."
                                 Toast.makeText(this,"Güncelleme başarılı",Toast.LENGTH_SHORT).show()
@@ -1150,20 +1150,21 @@ object PrayerRefresh {
         AlarmScheduler.scheduleRefresh(context)
         PrayerWidget.refreshAll(context)
     }
-    fun refresh(context:Context) {
+    fun refresh(context:Context,forceNetwork:Boolean=false) {
         val prefs=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
         val lat=java.lang.Double.longBitsToDouble(prefs.getLong("lat",java.lang.Double.doubleToRawLongBits(37.5753)))
         val lon=java.lang.Double.longBitsToDouble(prefs.getLong("lon",java.lang.Double.doubleToRawLongBits(36.9228)))
         val today=LocalDate.now()
         val cacheKey="times_${today}_${lat}_${lon}"
         val cached=prefs.getString(cacheKey,null)
-        val timings=if(cached!=null) try {
+        val timings=if(cached!=null && !forceNetwork) try {
             JSONObject(cached).takeIf { obj -> keys.all { key -> isValidPrayerClock(obj.optString(key)) } }
         } catch(_:Exception) { null } else null
         val validTimings=timings ?: run {
             val date=today.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
             val url=URL("https://api.aladhan.com/v1/timings/$date?latitude=$lat&longitude=$lon&method=13")
-            val connection=url.openConnection().apply { connectTimeout=12000; readTimeout=12000 }
+            val connection=(url.openConnection() as java.net.HttpURLConnection).apply { connectTimeout=12000; readTimeout=12000; requestMethod="GET" }
+            if(connection.responseCode !in 200..299) { connection.disconnect(); throw IllegalStateException("Vakit servisi HTTP hatası") }
             JSONObject(connection.getInputStream().bufferedReader().use { it.readText() }).getJSONObject("data").getJSONObject("timings").also {
                 if(!keys.all { key -> isValidPrayerClock(it.optString(key)) }) throw IllegalStateException("Eksik vakit verisi")
                 prefs.edit().putString(cacheKey,it.toString()).apply()
