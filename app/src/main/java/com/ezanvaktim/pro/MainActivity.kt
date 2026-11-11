@@ -56,29 +56,43 @@ class MainActivity : Activity(), SensorEventListener {
         stopReading()
         stopTilavet()
         if(surahNumber !in 1..114) return
-        val url="https://cdn.islamic.network/quran/audio-surah/128/$reciter/$surahNumber.mp3"
-        val player=android.media.MediaPlayer()
-        tilavetPlayer=player
-        try {
-            player.setAudioAttributes(android.media.AudioAttributes.Builder()
-                .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build())
-            player.setDataSource(url)
-            player.setOnPreparedListener { if(tilavetPlayer===it) it.start() }
-            player.setOnErrorListener { mp,_,_ ->
-                if(tilavetPlayer===mp) {
-                    stopTilavet()
-                    Toast.makeText(this,"Tilavet açılamadı. İnternet bağlantısını veya başka kâriyi deneyin.",Toast.LENGTH_LONG).show()
-                }
-                true
-            }
-            player.setOnCompletionListener { if(tilavetPlayer===it) stopTilavet() }
-            player.prepareAsync()
-            Toast.makeText(this,"Tilavet yükleniyor…",Toast.LENGTH_SHORT).show()
-        } catch(_:Exception) {
+        val primary="https://cdn.islamic.network/quran/audio-surah/128/$reciter/$surahNumber.mp3"
+        // Alternate whole-surah recording for Al-Afasy if the primary CDN fails.
+        val fallback=if(reciter=="ar.alafasy")
+            "https://server8.mp3quran.net/afs/${surahNumber.toString().padStart(3,'0')}.mp3"
+            else null
+        fun start(url:String, allowFallback:Boolean) {
             stopTilavet()
-            Toast.makeText(this,"Tilavet bağlantısı kurulamadı",Toast.LENGTH_LONG).show()
+            val player=android.media.MediaPlayer()
+            tilavetPlayer=player
+            try {
+                player.setAudioAttributes(android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build())
+                player.setDataSource(url)
+                player.setOnPreparedListener { if(tilavetPlayer===it) it.start() }
+                player.setOnErrorListener { mp,what,extra ->
+                    if(tilavetPlayer===mp) {
+                        stopTilavet()
+                        if(allowFallback && fallback!=null) {
+                            Toast.makeText(this,"İlk ses kaynağı açılamadı; alternatif deneniyor",Toast.LENGTH_SHORT).show()
+                            start(fallback,false)
+                        } else {
+                            Toast.makeText(this,"Tilavet oynatılamadı ($what/$extra). İnternet bağlantısı ve ses seviyesini kontrol edin.",Toast.LENGTH_LONG).show()
+                        }
+                    }
+                    true
+                }
+                player.setOnCompletionListener { if(tilavetPlayer===it) stopTilavet() }
+                player.prepareAsync()
+            } catch(e:Exception) {
+                stopTilavet()
+                if(allowFallback && fallback!=null) start(fallback,false)
+                else Toast.makeText(this,"Ses bağlantısı hatası: ${e.javaClass.simpleName}",Toast.LENGTH_LONG).show()
+            }
         }
+        Toast.makeText(this,"Hafız kaydı yükleniyor…",Toast.LENGTH_SHORT).show()
+        start(primary,true)
     }
     private var speech:android.speech.tts.TextToSpeech?=null
     private var speechReady=false
@@ -95,7 +109,9 @@ class MainActivity : Activity(), SensorEventListener {
             return
         }
         engine.setSpeechRate(if(arabic) 0.78f else 0.9f)
-        engine.speak(value,android.speech.tts.TextToSpeech.QUEUE_FLUSH,null,"ezan_reader")
+        val result=engine.speak(value,android.speech.tts.TextToSpeech.QUEUE_FLUSH,null,"ezan_reader")
+        if(result==android.speech.tts.TextToSpeech.ERROR)
+            Toast.makeText(this,"Ses motoru başlatılamadı. Telefonun metin okuma ayarlarını kontrol edin.",Toast.LENGTH_LONG).show()
     }
     private fun stopReading() { speech?.stop() }
 
@@ -134,6 +150,17 @@ class MainActivity : Activity(), SensorEventListener {
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 20)
         speech=android.speech.tts.TextToSpeech(this) { status ->
             speechReady=status==android.speech.tts.TextToSpeech.SUCCESS
+            if(speechReady) {
+                speech?.setOnUtteranceProgressListener(object:android.speech.tts.UtteranceProgressListener() {
+                    override fun onStart(utteranceId:String?) {}
+                    override fun onDone(utteranceId:String?) {}
+                    override fun onError(utteranceId:String?) {
+                        runOnUiThread {
+                            Toast.makeText(this@MainActivity,"Ses motoru okuyamadı. Android metin okuma ayarlarından Türkçe/Arapça ses paketini kontrol edin.",Toast.LENGTH_LONG).show()
+                        }
+                    }
+                })
+            }
         }
         render()
     }
