@@ -450,6 +450,43 @@ class MainActivity : Activity(), SensorEventListener {
                         addCategory(Intent.CATEGORY_OPENABLE)
                     },pickQuran)
                 })
+                root.addView(button("İçe aktardığım Kur'an dosyasını yedekle / paylaş") {
+                    val file=java.io.File(filesDir,"quran_import.json")
+                    if(!file.exists()) {
+                        Toast.makeText(this,"Önce 114 sûre dosyasını içe aktarın",Toast.LENGTH_LONG).show()
+                    } else {
+                        try {
+                            val uri=androidx.core.content.FileProvider.getUriForFile(this,"${packageName}.fileprovider",file)
+                            startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                                type="application/json"
+                                putExtra(Intent.EXTRA_STREAM,uri)
+                                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                            },"Kur'an JSON yedeğini paylaş"))
+                        } catch(e:Exception) {
+                            Toast.makeText(this,"Yedek paylaşılamadı: ${e.message}",Toast.LENGTH_LONG).show()
+                        }
+                    }
+                })
+                root.addView(button("İçe aktarılan Kur'an verisini sil") {
+                    val file=java.io.File(filesDir,"quran_import.json")
+                    if(!file.exists()) {
+                        Toast.makeText(this,"Silinecek içe aktarılmış dosya yok",Toast.LENGTH_SHORT).show()
+                    } else {
+                        android.app.AlertDialog.Builder(this)
+                            .setTitle("Çevrim dışı Kur'an dosyasını sil?")
+                            .setMessage("Yalnızca içe aktarılan dosya ve bu dosyaya ait ayet işaretleri silinir. Diğer uygulama ayarları korunur.")
+                            .setNegativeButton("Vazgeç",null)
+                            .setPositiveButton("Sil") { _, _ ->
+                                val atomic=android.util.AtomicFile(file)
+                                atomic.delete()
+                                val edit=prefs.edit().remove("quran_import_last").remove("quran_jump_bookmark")
+                                for(i in 0 until 114) edit.remove("quran_bookmark_$i")
+                                edit.apply()
+                                Toast.makeText(this,"İçe aktarılan dosya silindi",Toast.LENGTH_SHORT).show()
+                                render()
+                            }.show()
+                    }
+                })
                 root.addView(button("Çevrim dışı son okunan sûreye git") {
                     if(java.io.File(filesDir,"quran_import.json").exists()) {
                         section="İçe Aktarılan Sûre"
