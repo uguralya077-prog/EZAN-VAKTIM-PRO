@@ -47,6 +47,19 @@ class MainActivity : Activity(), SensorEventListener {
     private val pickShort = 102
     private var section = "Vakitler"
     private var zikrCount = 0
+    private val timerHandler=Handler(Looper.getMainLooper())
+    private var timerLabel:TextView?=null
+    private var timerTarget:LocalDateTime?=null
+    private var timerPrayer=""
+    private val timerTick=object:Runnable {
+        override fun run() {
+            val target=timerTarget ?: return
+            if(section!="Vakitler") return
+            val sec=java.time.Duration.between(LocalDateTime.now(),target).seconds.coerceAtLeast(0)
+            timerLabel?.text=String.format(Locale.getDefault(),"Sıradaki: %s   %02d:%02d:%02d",timerPrayer,sec/3600,(sec%3600)/60,sec%60)
+            timerHandler.postDelayed(this,1000)
+        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -67,6 +80,9 @@ class MainActivity : Activity(), SensorEventListener {
         text=label; setTextColor(white); setBackgroundColor(green); setOnClickListener { click() }
     }
     private fun render() {
+        timerHandler.removeCallbacks(timerTick)
+        timerTarget=null
+        timerLabel=null
         val outer = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL; setBackgroundColor(Color.rgb(7,19,15)) }
         val header = text("☪  EZAN VAKTİM PRO", 25f, gold).apply {
             gravity = Gravity.CENTER; setTypeface(null, Typeface.BOLD)
@@ -91,6 +107,8 @@ class MainActivity : Activity(), SensorEventListener {
                 heading=text(locationLabel,17f,gold).apply { gravity=Gravity.CENTER }
                 root.addView(heading)
                 root.addView(button("📍 Konumumu kullan") { locate() })
+                timerLabel=text("Sonraki vakit hesaplanıyor…",20f,gold).apply { gravity=Gravity.CENTER; setBackgroundColor(green) }
+                root.addView(timerLabel)
                 root.addView(text("GÜNLÜK NAMAZ VAKİTLERİ",21f,gold))
                 timesBox=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
                 root.addView(timesBox)
@@ -244,17 +262,27 @@ class MainActivity : Activity(), SensorEventListener {
                 if(index!=1) schedule.add(names[index] to at)
             } catch(_:Exception) {}
         }
-        timesBox.addView(text("Sıradaki vakit: ${next.ifEmpty { "Yarın İmsak" }}",18f,gold))
+        val upcoming=schedule.firstOrNull { it.second.isAfter(LocalDateTime.now()) }
+        if(upcoming!=null) {
+            timerPrayer=upcoming.first
+            timerTarget=upcoming.second
+        } else {
+            timerPrayer="Yarın İmsak"
+            timerTarget=try { LocalDateTime.of(LocalDate.now().plusDays(1),LocalTime.parse(obj.optString("Fajr","05:00").take(5))) } catch(_:Exception) { null }
+        }
+        timerHandler.removeCallbacks(timerTick)
+        timerHandler.post(timerTick)
         AlarmScheduler.schedule(this,schedule)
         AlarmScheduler.scheduleRefresh(this)
     }
     override fun onResume() {
         super.onResume()
+        if(section=="Vakitler" && timerTarget!=null) { timerHandler.removeCallbacks(timerTick); timerHandler.post(timerTick) }
         sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER)?.also { sensorManager.registerListener(this,it,SensorManager.SENSOR_DELAY_UI) }
         sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)?.also { sensorManager.registerListener(this,it,SensorManager.SENSOR_DELAY_UI) }
         if(section=="Kıble" && sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD)==null) compass.text="Bu cihazda pusula sensörü bulunamadı"
     }
-    override fun onPause() { sensorManager.unregisterListener(this); super.onPause() }
+    override fun onPause() { timerHandler.removeCallbacks(timerTick); sensorManager.unregisterListener(this); super.onPause() }
     override fun onSensorChanged(event:SensorEvent) {
         if(event.sensor.type==Sensor.TYPE_ACCELEROMETER) gravity=event.values.clone()
         if(event.sensor.type==Sensor.TYPE_MAGNETIC_FIELD) magnetic=event.values.clone()
