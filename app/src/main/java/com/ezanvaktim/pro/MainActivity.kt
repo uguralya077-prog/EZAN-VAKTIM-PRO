@@ -292,6 +292,20 @@ class MainActivity : Activity(), SensorEventListener {
                         Toast.makeText(this,"Bildirim gönderilemedi; uygulama bildirim ayarlarını kontrol edin.",Toast.LENGTH_LONG).show()
                     }
                 })
+                root.addView(panel().apply {
+                    addView(text("Alarm tanılama",19f,gold))
+                    val exact=if(Build.VERSION.SDK_INT>=31) (getSystemService(ALARM_SERVICE) as AlarmManager).canScheduleExactAlarms() else true
+                    val notificationManager=getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+                    val notificationReady=notificationManager.areNotificationsEnabled() &&
+                        (Build.VERSION.SDK_INT<33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED)
+                    val full=prefs.getString("full",null)!=null
+                    val short=prefs.getString("short",null)!=null
+                    addView(text("Dakik alarm: "+if(exact) "İzin var" else "İzin yok • gecikme olabilir",15f))
+                    addView(text("Bildirim: "+if(notificationReady) "Açık" else "Kapalı",15f))
+                    addView(text("Tam ezan ses dosyası: "+if(full) "Seçildi" else "Seçilmedi",15f))
+                    addView(text("Kısa ezan ses dosyası: "+if(short) "Seçildi" else "Seçilmedi",15f))
+                    addView(text("Bu tanılama izinleri gösterir; kilitli ekran ve pil tasarrufu altında gerçek ezan zamanlamasını garanti etmez.",13f))
+                })
                 root.addView(text("NAMAZ BAZINDA BİLDİRİMLER",19f,gold))
                 listOf("İmsak","Öğle","İkindi","Akşam","Yatsı").forEach { prayer ->
                     root.addView(CheckBox(this).apply {
