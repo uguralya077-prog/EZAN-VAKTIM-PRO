@@ -1061,12 +1061,14 @@ class MainActivity : Activity(), SensorEventListener {
                         if(verse.isBlank() || verse.length>3000 || !verse.any { it in '؀'..'ۿ' }) throw IllegalArgumentException("Arapça ayet metni geçersiz")
                     }
                 }
-                val file=java.io.File(filesDir,"quran_import.json")
-                val temp=java.io.File(filesDir,"quran_import.tmp")
-                temp.writeText(raw,Charsets.UTF_8)
-                if(!temp.renameTo(file)) {
-                    temp.copyTo(file,overwrite=true)
-                    temp.delete()
+                val file=android.util.AtomicFile(java.io.File(filesDir,"quran_import.json"))
+                val output=file.startWrite()
+                try {
+                    output.write(bytes)
+                    file.finishWrite(output)
+                } catch(e:Exception) {
+                    file.failWrite(output)
+                    throw e
                 }
                 Toast.makeText(this,"114 sûre içe aktarıldı",Toast.LENGTH_LONG).show()
                 section="İçe Aktarılan Kur'an"
