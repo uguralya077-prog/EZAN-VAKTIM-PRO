@@ -191,17 +191,50 @@ class MainActivity : Activity(), SensorEventListener {
             }
             "Zikir" -> {
                 zikrCount=prefs.getInt("zikr_count",0)
-                root.addView(text("ZİKİR SAYACI",23f,gold))
-                val counter=text("$zikrCount",52f,gold).apply { gravity=Gravity.CENTER }
-                root.addView(counter)
+                root.addView(text("DİJİTAL TESBİH",23f,gold))
+                root.addView(text("Hedef seç, zikrini say ve kaldığın yerden devam et.",15f))
+                val goals=arrayOf("33","99","100","1000","Sınırsız")
+                val selector=Spinner(this).apply {
+                    adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,goals)
+                    setSelection(prefs.getInt("zikr_goal_index",1).coerceIn(0,goals.lastIndex))
+                }
+                root.addView(selector)
+                val counter=text("$zikrCount",56f,gold).apply { gravity=Gravity.CENTER }
+                root.addView(panel().apply { addView(counter) })
+                val progress=text("",17f,white).apply { gravity=Gravity.CENTER }
+                root.addView(progress)
+                fun refreshCounter() {
+                    val target=goals[selector.selectedItemPosition].toIntOrNull()
+                    progress.text=if(target==null) "Serbest zikir" else "Hedef: $target • Kalan: ${(target-zikrCount).coerceAtLeast(0)}"
+                    counter.text="$zikrCount"
+                }
+                selector.onItemSelectedListener=object:android.widget.AdapterView.OnItemSelectedListener {
+                    override fun onNothingSelected(parent:android.widget.AdapterView<*>?) {}
+                    override fun onItemSelected(parent:android.widget.AdapterView<*>?,view:android.view.View?,position:Int,id:Long) {
+                        prefs.edit().putInt("zikr_goal_index",position).apply()
+                        refreshCounter()
+                    }
+                }
                 root.addView(button("TESBİH +1") {
                     zikrCount++
                     prefs.edit().putInt("zikr_count",zikrCount).apply()
-                    counter.text="$zikrCount"
+                    refreshCounter()
+                    val target=goals[selector.selectedItemPosition].toIntOrNull()
+                    if(target!=null && zikrCount==target) Toast.makeText(this,"Zikir hedefi tamamlandı",Toast.LENGTH_SHORT).show()
+                })
+                root.addView(button("Bir geri al") {
+                    zikrCount=(zikrCount-1).coerceAtLeast(0)
+                    prefs.edit().putInt("zikr_count",zikrCount).apply()
+                    refreshCounter()
                 })
                 root.addView(button("Sayacı sıfırla") {
-                    zikrCount=0; prefs.edit().putInt("zikr_count",0).apply(); counter.text="0"
+                    android.app.AlertDialog.Builder(this).setTitle("Zikir sayacı").setMessage("Sayaç sıfırlansın mı?")
+                        .setNegativeButton("Vazgeç",null)
+                        .setPositiveButton("Sıfırla") { _,_ ->
+                            zikrCount=0; prefs.edit().putInt("zikr_count",0).apply(); refreshCounter()
+                        }.show()
                 })
+                refreshCounter()
             }
             "99 İsim" -> {
                 root.addView(text("ALLAH'IN GÜZEL İSİMLERİ",22f,gold))
