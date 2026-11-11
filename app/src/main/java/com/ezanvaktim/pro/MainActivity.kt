@@ -231,6 +231,7 @@ class MainActivity : Activity(), SensorEventListener {
                     "Kıble Pusulası" to "Kıble",
                     "Ezan ve Alarmlar" to "Ezan",
                     "Kur'an-ı Kerim" to "Kur'an",
+                    "30 Cüz" to "Cüzler",
                     "Günlük Dualar" to "Dualar",
                     "Dijital Tesbih" to "Zikir",
                     "Allah'ın 99 İsmi" to "99 İsim",
@@ -546,6 +547,7 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(text("KUR'AN-I KERİM",23f,gold))
                 root.addView(text("114 sûre Arapça çevrim dışı okuma • Türkçe meal isteğe bağlı",15f))
                 root.addView(text("114 sûrelik Arapça metin uygulama paketinde bulunur ve internetsiz okunur. Türkçe meal için izinli bir çeviri dosyası içe aktarabilir veya Diyanet sitesini çevrim içi açabilirsiniz.",14f))
+                root.addView(button("📚 30 Cüz • cüzden ayete git") { section="Cüzler"; render() })
                 root.addView(button("Çevrim dışı kısa sûreler") {
                     section="Kısa Sûreler"
                     render()
@@ -690,6 +692,26 @@ class MainActivity : Activity(), SensorEventListener {
                     override fun afterTextChanged(s:android.text.Editable?) {}
                 })
                 showSurahs("")
+            }
+            "Cüzler" -> {
+                root.addView(button("← Kur'an'a dön") { section="Kur'an"; render() })
+                root.addView(text("KUR'AN-I KERİM • 30 CÜZ",23f,gold))
+                root.addView(text("Cüz başlangıcını seçin. İlgili sûre ve ayete geçilir. Sûreyi gerçek hafızdan dinleyebilirsiniz.",15f))
+                try {
+                    val chapters=loadBundledOrImportedQuran().getJSONArray("surahs")
+                    juzStarts.forEachIndexed { i, pair ->
+                        val (surah,ayah)=pair
+                        val title=chapters.getJSONObject(surah-1).getString("name")
+                        root.addView(button("${i+1}. Cüz  •  $title  •  $ayah. ayet") {
+                            prefs.edit().putInt("quran_import_last",surah-1)
+                                .putInt("quran_search_jump_verse",ayah-1).apply()
+                            section="İçe Aktarılan Sûre"
+                            render()
+                        })
+                    }
+                } catch(_:Exception) {
+                    root.addView(text("Cüz listesi açılamadı.",16f))
+                }
             }
             "İçe Aktarılan Kur'an" -> {
                 root.addView(button("← Kur'an menüsüne dön") { section="Kur'an"; render() })
@@ -1550,6 +1572,14 @@ class MainActivity : Activity(), SensorEventListener {
         super.onRequestPermissionsResult(requestCode,permissions,grantResults)
         if(requestCode==21 && grantResults.any { it==PackageManager.PERMISSION_GRANTED }) locate()
     }
+    // Standard 30 juz starting ayahs (surah number, 1-based ayah number).
+    private val juzStarts=listOf(
+        1 to 1,2 to 142,2 to 253,3 to 93,4 to 24,4 to 148,
+        5 to 82,6 to 111,7 to 88,8 to 41,9 to 93,11 to 6,
+        12 to 53,15 to 1,17 to 1,18 to 75,21 to 1,23 to 1,
+        25 to 21,27 to 56,29 to 46,33 to 31,36 to 28,39 to 32,
+        41 to 47,46 to 1,51 to 31,58 to 1,67 to 1,78 to 1
+    )
     private fun loadBundledOrImportedQuran():JSONObject {
         val imported=java.io.File(filesDir,"quran_import.json")
         val raw=if(imported.exists()) imported.readText(Charsets.UTF_8)
