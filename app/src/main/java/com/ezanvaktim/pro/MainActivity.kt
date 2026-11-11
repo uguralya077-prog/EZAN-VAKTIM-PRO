@@ -14,6 +14,8 @@ import android.os.*
 import android.provider.Settings
 import android.view.Gravity
 import android.widget.*
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import org.json.JSONObject
 import java.net.URL
 import java.time.*
@@ -235,11 +237,30 @@ class MainActivity : Activity(), SensorEventListener {
             }
             "Kur'an" -> {
                 root.addView(text("KUR'AN-I KERİM",23f,gold))
-                root.addView(text("Kur'an okuma ve Türkçe meal bağlantıları",17f))
-                root.addView(button("Kur'an-ı Kerim'i aç") {
-                    startActivity(Intent(Intent.ACTION_VIEW,Uri.parse("https://kuran.diyanet.gov.tr/")))
+                root.addView(text("Diyanet Kur'an Portalı • Çevrim içi okuma",15f))
+                root.addView(text("Arapça metin ve Türkçe meal için Diyanet'in resmî sitesini uygulama içinde açabilirsiniz. İnternet bağlantısı gereklidir.",14f))
+                root.addView(button("Kur'an okuma ekranını aç") {
+                    section="Kur'an Oku"
+                    render()
                 })
-                root.addView(text("Bu bölüm şimdilik Diyanet'in çevrim içi Kur'an sayfasını açar. Uygulama içi tam metin ve sesli okuma sonraki geliştirme aşamasındadır.",14f))
+            }
+            "Kur'an Oku" -> {
+                root.addView(button("← Kur'an menüsüne dön") { section="Kur'an"; render() })
+                val browser=WebView(this).apply {
+                    settings.javaScriptEnabled=true
+                    settings.domStorageEnabled=true
+                    settings.allowFileAccess=false
+                    settings.allowContentAccess=false
+                    webViewClient=object:WebViewClient() {
+                        override fun shouldOverrideUrlLoading(view:WebView?,request:android.webkit.WebResourceRequest?):Boolean {
+                            val url=request?.url ?: return true
+                            return url.scheme!="https" || url.host?.endsWith("diyanet.gov.tr")!=true
+                        }
+                    }
+                    loadUrl("https://kuran.diyanet.gov.tr/")
+                }
+                root.addView(browser,LinearLayout.LayoutParams(-1,resources.displayMetrics.heightPixels*2/3))
+                root.addView(text("Görüntülenen içerik Diyanet'in çevrim içi hizmetidir; uygulamanın yerel çevrim dışı Kur'an veritabanı henüz bulunmuyor.",13f))
             }
             "Dualar" -> {
                 root.addView(text("GÜNLÜK DUALAR",23f,gold))
