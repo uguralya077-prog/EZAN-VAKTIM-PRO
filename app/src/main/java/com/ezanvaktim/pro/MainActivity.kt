@@ -993,7 +993,7 @@ class MainActivity : Activity(), SensorEventListener {
                     if(verses.length()<1 || verses.length()>300) throw IllegalArgumentException("Geçersiz ayet sayısı")
                     for(j in 0 until verses.length()) {
                         val verse=verses.getString(j)
-                        if(verse.isBlank() || verse.length>3000 || !verse.any { it in '\\u0600'..'\\u06FF' }) throw IllegalArgumentException("Arapça ayet metni geçersiz")
+                        if(verse.isBlank() || verse.length>3000 || !verse.any { it in '؀'..'ۿ' }) throw IllegalArgumentException("Arapça ayet metni geçersiz")
                     }
                 }
                 val file=java.io.File(filesDir,"quran_import.json")
