@@ -203,19 +203,16 @@ class MainActivity : Activity(), SensorEventListener {
                     "Ana Ekran Widget'ı" to "Widget",
                     "Görünüm ve Ayarlar" to "Ayarlar"
                 )
-                items.chunked(2).forEach { pair ->
-                    val line=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
-                    pair.forEach { (title,target) ->
-                        val tile=panel().apply {
-                            gravity=Gravity.CENTER
-                            minimumHeight=140
-                            addView(text(title,18f,gold).apply { gravity=Gravity.CENTER })
-                            setOnClickListener { section=target; render() }
-                        }
-                        line.addView(tile,LinearLayout.LayoutParams(0,-2,1f).apply { setMargins(4,4,4,4) })
-                    }
-                    if(pair.size==1) line.addView(android.view.View(this),LinearLayout.LayoutParams(0,1,1f))
-                    root.addView(line)
+                items.forEach { (title,target) ->
+                    root.addView(button("❯  $title") {
+                        section=target
+                        render()
+                    }.apply {
+                        textSize=18f
+                        gravity=Gravity.CENTER_VERTICAL
+                        setPadding(24,18,18,18)
+                        minHeight=(58*resources.displayMetrics.density).toInt()
+                    })
                 }
             }
             "Vakitler" -> {
