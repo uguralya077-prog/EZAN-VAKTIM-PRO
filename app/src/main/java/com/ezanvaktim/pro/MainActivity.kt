@@ -389,7 +389,8 @@ class MainActivity : Activity(), SensorEventListener {
                 val fontLabel=text("Arapça yazı boyutu: $surahFont",15f,gold)
                 root.addView(fontLabel)
                 val fontControls=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
-                root.addView(fontControls)                val searchSurah=EditText(this).apply {
+                root.addView(fontControls)
+                val searchSurah=EditText(this).apply {
                     hint="Sûre ara..."
                     setSingleLine(true)
                     setTextColor(white)
