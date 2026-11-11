@@ -306,6 +306,28 @@ class MainActivity : Activity(), SensorEventListener {
                     addView(text("Kısa ezan ses dosyası: "+if(short) "Seçildi" else "Seçilmedi",15f))
                     addView(text("Bu tanılama izinleri gösterir; kilitli ekran ve pil tasarrufu altında gerçek ezan zamanlamasını garanti etmez.",13f))
                 })
+                root.addView(button("Alarm tanılama raporunu paylaş") {
+                    val alarms=getSystemService(ALARM_SERVICE) as AlarmManager
+                    val notifications=getSystemService(NOTIFICATION_SERVICE) as NotificationManager
+                    val exact=Build.VERSION.SDK_INT<31 || alarms.canScheduleExactAlarms()
+                    val granted=Build.VERSION.SDK_INT<33 || checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)==PackageManager.PERMISSION_GRANTED
+                    val last=prefs.getLong("last_successful_refresh",0L)
+                    val refresh=if(last>0L) java.text.SimpleDateFormat("dd.MM.yyyy HH:mm",Locale("tr","TR")).format(java.util.Date(last)) else "Yok"
+                    val report=listOf(
+                        "EZAN VAKTİM PRO • ALARM TANILAMA",
+                        "Android SDK: ${Build.VERSION.SDK_INT}",
+                        "Dakik alarm izni: ${if(exact) "Açık" else "Kapalı"}",
+                        "Bildirim izni: ${if(granted && notifications.areNotificationsEnabled()) "Açık" else "Kapalı"}",
+                        "Tam ezan dosyası: ${if(prefs.getString("full",null)!=null) "Seçildi" else "Yok"}",
+                        "Kısa ezan dosyası: ${if(prefs.getString("short",null)!=null) "Seçildi" else "Yok"}",
+                        "Son başarılı vakit yenileme: $refresh",
+                        "Not: Bu rapor ses çalımını veya zamanında alarmı doğrulamaz."
+                    ).joinToString("\n")
+                    startActivity(Intent.createChooser(Intent(Intent.ACTION_SEND).apply {
+                        type="text/plain"
+                        putExtra(Intent.EXTRA_TEXT,report)
+                    },"Tanılama raporunu paylaş"))
+                })
                 root.addView(text("NAMAZ BAZINDA BİLDİRİMLER",19f,gold))
                 listOf("İmsak","Öğle","İkindi","Akşam","Yatsı").forEach { prayer ->
                     root.addView(CheckBox(this).apply {
