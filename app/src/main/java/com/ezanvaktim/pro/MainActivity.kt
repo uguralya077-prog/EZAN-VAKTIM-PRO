@@ -1947,7 +1947,7 @@ class MainActivity : Activity(), SensorEventListener {
             Toast.makeText(this,"Ses dosyası açılamadı. Dosyayı yeniden seçin.",Toast.LENGTH_LONG).show()
         }
     }
-    private private fun playDailyDua(title:String) {
+    private fun playDailyDua(title:String) {
         val uri=prefs.getString("dua_audio_"+title,null)
         if(uri.isNullOrBlank()) {
             Toast.makeText(this,"Bu dua için ses kaydı seçin",Toast.LENGTH_LONG).show()
