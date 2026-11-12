@@ -328,7 +328,7 @@ class MainActivity : Activity(), SensorEventListener {
         val header = text("☪  EZAN VAKTİM PRO", 25f, gold).apply {
             gravity = Gravity.CENTER; setTypeface(null, Typeface.BOLD)
             setPadding(12,24,12,22)
-            setBackgroundColor(Color.rgb(11,34,28))
+            background=android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.TL_BR,intArrayOf(Color.rgb(11,34,28),Color.rgb(23,69,59))).apply { cornerRadius=0f }
         }
         outer.addView(header)
         val scroll = ScrollView(this)
@@ -367,19 +367,19 @@ class MainActivity : Activity(), SensorEventListener {
         outer.requestApplyInsets()
         when(section) {
             "Menüler" -> {
-                root.addView(text("TÜM MENÜLER",24f,gold))
+                root.addView(text("KEŞFET • İBADET VE YAŞAM",24f,gold))
                 root.addView(text("İbadet ve günlük yaşam için bütün bölümler",15f))
                 val items=listOf(
-                    "Namaz Vakitleri" to "Vakitler",
-                    "Kıble Pusulası" to "Kıble",
-                    "Ezan ve Alarmlar" to "Ezan",
-                    "Kur'an-ı Kerim" to "Kur'an",
-                    "30 Cüz" to "Cüzler",
-                    "Günlük Dualar" to "Dualar",
-                    "Dijital Tesbih" to "Zikir",
-                    "Allah'ın 99 İsmi" to "99 İsim",
-                    "Ana Ekran Widget'ı" to "Widget",
-                    "Görünüm ve Ayarlar" to "Ayarlar"
+                    "🕌 Namaz Vakitleri" to "Vakitler",
+                    "🧭 Kıble Pusulası" to "Kıble",
+                    "🔔 Ezan ve Alarmlar" to "Ezan",
+                    "📖 Kur'an-ı Kerim" to "Kur'an",
+                    "🎧 30 Cüz • Hafız Tilaveti" to "Cüzler",
+                    "🤲 Günlük Dualar" to "Dualar",
+                    "📿 Dijital Tesbih" to "Zikir",
+                    "✨ Allah'ın 99 İsmi" to "99 İsim",
+                    "📱 Ana Ekran Widget'ı" to "Widget",
+                    "⚙ Görünüm ve Ayarlar" to "Ayarlar"
                 )
                 items.forEach { (title,target) ->
                     root.addView(button("❯  $title") {
