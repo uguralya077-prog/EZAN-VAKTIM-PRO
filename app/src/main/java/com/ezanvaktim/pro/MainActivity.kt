@@ -379,6 +379,10 @@ class MainActivity : Activity(), SensorEventListener {
                     "📿 Dijital Tesbih" to "Zikir",
                     "✨ Allah'ın 99 İsmi" to "99 İsim",
                     "📱 Ana Ekran Widget'ı" to "Widget",
+                    "🗓 Hicri Takvim ve Dini Günler" to "Hicri Takvim",
+                    "🧎 Namaz ve Kaza Takibi" to "Namaz Takibi",
+                    "📚 Hatim Takibi" to "Hatim Takibi",
+                    "💰 Zekât Hesaplayıcı" to "Zekât",
                     "⚙ Görünüm ve Ayarlar" to "Ayarlar"
                 )
                 items.forEach { (title,target) ->
@@ -392,6 +396,112 @@ class MainActivity : Activity(), SensorEventListener {
                         minHeight=(58*resources.displayMetrics.density).toInt()
                     })
                 }
+            }
+            "Hicri Takvim" -> {
+                root.addView(text("HİCRİ TAKVİM",23f,gold))
+                val today=LocalDate.now()
+                val hijri=java.time.chrono.HijrahDate.from(today)
+                val hday=hijri.get(java.time.temporal.ChronoField.DAY_OF_MONTH)
+                val hmonth=hijri.get(java.time.temporal.ChronoField.MONTH_OF_YEAR)
+                val hyear=hijri.get(java.time.temporal.ChronoField.YEAR)
+                val months=listOf("Muharrem","Safer","Rebiülevvel","Rebiülahir","Cemaziyelevvel","Cemaziyelahir","Recep","Şaban","Ramazan","Şevval","Zilkade","Zilhicce")
+                root.addView(panel().apply {
+                    addView(text("$hday ${months[hmonth-1]} $hyear",24f,gold))
+                    addView(text(today.format(DateTimeFormatter.ofPattern("d MMMM yyyy",Locale("tr","TR"))),17f))
+                    addView(text("Hicri tarih hesaplamadır; resmî takvimle gözlem ve yöntem farkı nedeniyle bir gün değişebilir.",13f))
+                })
+                root.addView(text("Önemli hicri günler",19f,gold))
+                listOf("1 Muharrem • Hicri yılbaşı","10 Muharrem • Aşure günü","12 Rebiülevvel • Mevlid","1 Ramazan • Ramazan başlangıcı","27 Ramazan • Kadir Gecesi (yaygın kabul)","1 Şevval • Ramazan Bayramı","10 Zilhicce • Kurban Bayramı").forEach {
+                    root.addView(panel().apply { addView(text(it,16f)) })
+                }
+                root.addView(text("Kandil ve bayramların Türkiye'deki resmî miladi tarihleri için Diyanet takvimini esas alın.",13f))
+            }
+            "Namaz Takibi" -> {
+                root.addView(text("NAMAZ VE KAZA TAKİBİ",23f,gold))
+                val today=LocalDate.now().toString()
+                val names=listOf("İmsak/Sabah","Öğle","İkindi","Akşam","Yatsı")
+                root.addView(text("Bugün • $today",16f,gold))
+                names.forEachIndexed { i,name ->
+                    val key="prayer_done_${today}_$i"
+                    root.addView(CheckBox(this).apply {
+                        text="$name namazını kıldım"
+                        setTextColor(white)
+                        isChecked=prefs.getBoolean(key,false)
+                        setOnCheckedChangeListener { _,checked -> prefs.edit().putBoolean(key,checked).apply() }
+                    })
+                }
+                root.addView(text("Kaza namazı sayacı (kişisel kayıt)",19f,gold))
+                names.forEachIndexed { i,name ->
+                    val key="qaza_count_$i"
+                    val count=prefs.getInt(key,0)
+                    root.addView(panel().apply {
+                        val display=text("$name: $count",17f)
+                        addView(display)
+                        addView(button("+1 kaza ekle") {
+                            val value=prefs.getInt(key,0)+1
+                            prefs.edit().putInt(key,value).apply()
+                            display.text="$name: $value"
+                        })
+                        addView(button("−1 kaza düş") {
+                            val value=(prefs.getInt(key,0)-1).coerceAtLeast(0)
+                            prefs.edit().putInt(key,value).apply()
+                            display.text="$name: $value"
+                        })
+                    })
+                }
+            }
+            "Hatim Takibi" -> {
+                root.addView(text("HATİM TAKİBİ",23f,gold))
+                root.addView(text("30 cüzü okudukça işaretleyin. Kayıt cihazda saklanır.",15f))
+                val completed=(1..30).count { prefs.getBoolean("hatim_juz_$it",false) }
+                root.addView(text("$completed / 30 cüz tamamlandı",21f,gold))
+                for(i in 1..30) {
+                    root.addView(CheckBox(this).apply {
+                        text="$i. cüz tamamlandı"
+                        setTextColor(white)
+                        isChecked=prefs.getBoolean("hatim_juz_$i",false)
+                        setOnCheckedChangeListener { _,checked -> prefs.edit().putBoolean("hatim_juz_$i",checked).apply() }
+                    })
+                }
+                root.addView(button("Yeni hatme başla • işaretleri sıfırla") {
+                    android.app.AlertDialog.Builder(this).setTitle("Hatim sıfırlansın mı?")
+                        .setNegativeButton("Vazgeç",null)
+                        .setPositiveButton("Sıfırla") { _,_ ->
+                            val edit=prefs.edit()
+                            for(i in 1..30) edit.remove("hatim_juz_$i")
+                            edit.apply()
+                            render()
+                        }.show()
+                })
+            }
+            "Zekât" -> {
+                root.addView(text("ZEKÂT HESAPLAYICI",23f,gold))
+                root.addView(text("Nakit, altın ve diğer zekâta tabi varlıkların TL karşılığını girin. Borçları düşüp yaklaşık %2,5 hesaplayın.",15f))
+                val fields=listOf("Nakit ve banka (TL)","Altın ve döviz toplam değeri (TL)","Ticari mallar ve alacaklar (TL)","Düşülebilir kısa vadeli borçlar (TL)")
+                val inputs=fields.map { title ->
+                    val input=EditText(this).apply {
+                        hint=title
+                        inputType=android.text.InputType.TYPE_CLASS_NUMBER or android.text.InputType.TYPE_NUMBER_FLAG_DECIMAL
+                        setSingleLine(true)
+                        setTextColor(white)
+                        setHintTextColor(Color.LTGRAY)
+                    }
+                    root.addView(input)
+                    input
+                }
+                root.addView(button("Zekât tutarını hesapla") {
+                    try {
+                        val values=inputs.map { it.text.toString().replace(',','.').toDoubleOrNull() ?: 0.0 }
+                        if(values.any { it<0 || !it.isFinite() }) throw IllegalArgumentException("Negatif veya geçersiz tutar")
+                        val net=(values[0]+values[1]+values[2]-values[3]).coerceAtLeast(0.0)
+                        val amount=net*0.025
+                        val format=java.text.NumberFormat.getCurrencyInstance(Locale("tr","TR"))
+                        android.app.AlertDialog.Builder(this).setTitle("Tahmini zekât")
+                            .setMessage("Net varlık: ${format.format(net)}\n%2,5: ${format.format(amount)}\n\nNisap, bir kameri yıl şartı ve varlık türüne ilişkin hükümler bu basit hesapta otomatik doğrulanmaz.").setPositiveButton("Tamam",null).show()
+                    } catch(e:Exception) {
+                        Toast.makeText(this,"Geçerli tutarlar girin",Toast.LENGTH_LONG).show()
+                    }
+                })
             }
             "Vakitler" -> {
                 val quick=LinearLayout(this).apply { orientation=LinearLayout.HORIZONTAL }
