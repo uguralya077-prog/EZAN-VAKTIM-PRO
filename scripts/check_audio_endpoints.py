@@ -7,7 +7,6 @@ URLS = {
     "surah_alafasy": "https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/1.mp3",
     "ayah_alafasy": "https://cdn.islamic.network/quran/audio/128/ar.alafasy/1.mp3",
     "ayah_husary": "https://cdn.islamic.network/quran/audio/128/ar.husary/1.mp3",
-    "ayah_abdulbasit": "https://cdn.islamic.network/quran/audio/128/ar.abdulbasitmurattal/1.mp3",
 }
 for name, url in URLS.items():
     req = urllib.request.Request(url, headers={"Range": "bytes=0-1023", "User-Agent": "EzanVaktimPro-CI/1.0"})
