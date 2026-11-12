@@ -1966,10 +1966,16 @@ class MainActivity : Activity(), SensorEventListener {
             Toast.makeText(this,"Ses dosyası açılamadı. Dosyayı yeniden seçin.",Toast.LENGTH_LONG).show()
         }
     }
+    private fun duaAudioPath(title:String):java.io.File {
+        val hash=java.security.MessageDigest.getInstance("SHA-256")
+            .digest(title.toByteArray(Charsets.UTF_8)).take(12)
+            .joinToString("") { "%02x".format(it) }
+        return java.io.File(java.io.File(filesDir,"daily_dua_audio"),"$hash.audio")
+    }
     private fun playDailyDua(title:String) {
-        val uri=prefs.getString("dua_audio_"+title,null)
-        if(uri.isNullOrBlank()) {
-            Toast.makeText(this,"Bu dua için ses kaydı seçin",Toast.LENGTH_LONG).show()
+        val file=duaAudioPath(title)
+        if(!file.isFile || file.length()<1024L) {
+            Toast.makeText(this,"Bu dua için gerçek ses kaydı henüz eklenmedi",Toast.LENGTH_LONG).show()
             return
         }
         stopReading()
@@ -1977,7 +1983,7 @@ class MainActivity : Activity(), SensorEventListener {
         try {
             val player=android.media.MediaPlayer()
             tilavetPlayer=player
-            player.setDataSource(this,Uri.parse(uri))
+            player.setDataSource(file.absolutePath)
             player.setOnPreparedListener { if(tilavetPlayer===it) it.start() }
             player.setOnCompletionListener { if(tilavetPlayer===it) stopTilavet() }
             player.setOnErrorListener { _,_,_ -> stopTilavet(); true }
@@ -1999,13 +2005,38 @@ class MainActivity : Activity(), SensorEventListener {
             val title=prefs.getString("dua_audio_pending",null)
             prefs.edit().remove("dua_audio_pending").apply()
             if(resultCode==RESULT_OK && title!=null && data?.data!=null) {
-                val uri=data.data!!
-                try {
-                    contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)
-                    prefs.edit().putString("dua_audio_"+title,uri.toString()).apply()
-                    Toast.makeText(this,"Dua ses kaydı seçildi; internetsiz dinlenebilir",Toast.LENGTH_LONG).show()
-                } catch(e:Exception) {
-                    Toast.makeText(this,"Ses izni alınamadı: ${e.message}",Toast.LENGTH_LONG).show()
+                val source=data.data!!
+                thread {
+                    val target=duaAudioPath(title)
+                    val temp=java.io.File(target.absolutePath+".part")
+                    try {
+                        target.parentFile?.mkdirs()
+                        var count=0L
+                        contentResolver.openInputStream(source)?.use { input ->
+                            temp.outputStream().use { output ->
+                                val buf=ByteArray(16384)
+                                while(true) {
+                                    val n=input.read(buf)
+                                    if(n<0) break
+                                    count+=n
+                                    if(count>30L*1024L*1024L) error("Ses dosyası 30 MB sınırını aşıyor")
+                                    output.write(buf,0,n)
+                                }
+                            }
+                        } ?: error("Ses dosyası açılamadı")
+                        if(count<1024L) error("Ses dosyası boş")
+                        val metadata=android.media.MediaMetadataRetriever()
+                        try {
+                            metadata.setDataSource(temp.absolutePath)
+                            if(metadata.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION).isNullOrBlank()) error("Geçersiz ses kaydı")
+                        } finally { metadata.release() }
+                        if(target.exists()) target.delete()
+                        if(!temp.renameTo(target)) error("Ses dosyası kaydedilemedi")
+                        runOnUiThread { Toast.makeText(this,"Dua kaydı telefona kopyalandı; internetsiz dinlenebilir",Toast.LENGTH_LONG).show() }
+                    } catch(e:Exception) {
+                        temp.delete()
+                        runOnUiThread { Toast.makeText(this,"Dua kaydı eklenemedi: ${e.message}",Toast.LENGTH_LONG).show() }
+                    }
                 }
             }
             return
