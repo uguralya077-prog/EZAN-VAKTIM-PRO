@@ -52,11 +52,62 @@ class MainActivity : Activity(), SensorEventListener {
         try { tilavetPlayer?.release() } catch(_:Exception) { }
         tilavetPlayer=null
     }
+    private fun offlineSurahFile(number:Int,reciter:String):java.io.File {
+        val safe=reciter.replace(Regex("[^a-zA-Z0-9.]"),"_")
+        return java.io.File(java.io.File(filesDir,"quran_audio/$safe"),"${number.toString().padStart(3,'0')}.mp3")
+    }
+    private fun downloadSurah(number:Int,reciter:String) {
+        val target=offlineSurahFile(number,reciter)
+        if(target.length()>1024L) {
+            Toast.makeText(this,"Bu sûre zaten indirilmiş",Toast.LENGTH_SHORT).show()
+            return
+        }
+        Toast.makeText(this,"Sûre indiriliyor…",Toast.LENGTH_SHORT).show()
+        thread {
+            val temp=java.io.File(target.absolutePath+".part")
+            try {
+                target.parentFile?.mkdirs()
+                val url="https://cdn.islamic.network/quran/audio-surah/128/$reciter/$number.mp3"
+                val connection=URL(url).openConnection() as java.net.HttpURLConnection
+                connection.connectTimeout=15000
+                connection.readTimeout=30000
+                try {
+                    if(connection.responseCode !in 200..299) error("HTTP ${connection.responseCode}")
+                    var bytes=0L
+                    connection.inputStream.use { input ->
+                        temp.outputStream().use { output ->
+                            val buffer=ByteArray(16384)
+                            while(true) {
+                                val count=input.read(buffer)
+                                if(count<0) break
+                                bytes+=count
+                                if(bytes>150L*1024*1024) error("Dosya boyutu sınırı aşıldı")
+                                output.write(buffer,0,count)
+                            }
+                        }
+                    }
+                    if(bytes<1024) error("Boş ses kaydı")
+                    val metadata=android.media.MediaMetadataRetriever()
+                    try {
+                        metadata.setDataSource(temp.absolutePath)
+                        if(metadata.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION).isNullOrBlank())
+                            error("Geçersiz ses kaydı")
+                    } finally { metadata.release() }
+                    if(!temp.renameTo(target)) error("Kayıt tamamlanamadı")
+                    runOnUiThread { Toast.makeText(this,"Sûre indirildi; artık internetsiz dinlenebilir",Toast.LENGTH_LONG).show() }
+                } finally { connection.disconnect() }
+            } catch(e:Exception) {
+                temp.delete()
+                runOnUiThread { Toast.makeText(this,"İndirme başarısız: ${e.message}",Toast.LENGTH_LONG).show() }
+            }
+        }
+    }
     private fun playTilavet(surahNumber:Int, reciter:String="ar.alafasy") {
         stopReading()
         stopTilavet()
         if(surahNumber !in 1..114) return
-        val primary="https://cdn.islamic.network/quran/audio-surah/128/$reciter/$surahNumber.mp3"
+        val local=offlineSurahFile(surahNumber,reciter)
+        val primary=if(local.length()>1024L) local.absolutePath else "https://cdn.islamic.network/quran/audio-surah/128/$reciter/$surahNumber.mp3"
         // Alternate whole-surah recording for Al-Afasy if the primary CDN fails.
         val fallback=if(reciter=="ar.alafasy")
             "https://server8.mp3quran.net/afs/${surahNumber.toString().padStart(3,'0')}.mp3"
@@ -871,13 +922,8 @@ class MainActivity : Activity(), SensorEventListener {
                     root.addView(text("GERÇEK KUR'AN TİLAVETİ • internet gerektirir",17f,gold))
                     val reciters=listOf(
                         "Mişârî Râşid el-Afâsî" to "ar.alafasy",
-                        "Mahmud Halil el-Husarî" to "ar.husary",
-                        "Muhammed Sıddîk el-Minşâvî" to "ar.minshawi",
-                        "Abdurrahman es-Sudeys" to "ar.abdurrahmaansudais",
                         "Abdülbasit Abdüssamed" to "ar.abdulbasitmurattal",
-                        "Saud eş-Şureym" to "ar.saoodshuraym",
-                        "Ahmed el-Acemî" to "ar.ahmedajamy",
-                        "Maher el-Muaykılî" to "ar.mahermuaiqly"
+                        "Mahmud Halil el-Husarî" to "ar.husary"
                     )
                     val reciterPicker=Spinner(this).apply {
                         adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,reciters.map { it.first })
@@ -886,8 +932,16 @@ class MainActivity : Activity(), SensorEventListener {
                     root.addView(button("▶ Sûreyi hafızdan dinle") {
                         playTilavet(index+1,reciters[reciterPicker.selectedItemPosition].second)
                     })
+                    root.addView(button("⬇ Sûreyi çevrim dışı indir") {
+                        downloadSurah(index+1,reciters[reciterPicker.selectedItemPosition].second)
+                    })
+                    root.addView(button("🗑 İndirilen sûreyi sil") {
+                        val file=offlineSurahFile(index+1,reciters[reciterPicker.selectedItemPosition].second)
+                        stopTilavet()
+                        Toast.makeText(this,if(file.delete()) "İndirilen kayıt silindi" else "İndirilmiş kayıt bulunamadı",Toast.LENGTH_SHORT).show()
+                    })
                     root.addView(button("■ Tilaveti durdur") { stopTilavet() })
-                    root.addView(text("Ses kayıtları Al Quran Cloud CDN üzerinden çevrim içi çalınır; APK içinde ses kaydı saklanmaz.",13f,accent))
+                    root.addView(text("Önce indirilen kayıt kullanılır. Kayıt yoksa çevrim içi dinleme denenir. Cüz düğmesi başlangıç ayetine gider; tam cüz kesintisiz oynatma henüz eklenmedi.",13f,accent))
 
                     root.addView(button("Sûre metnini paylaş") {
                         val versesForShare=surah.getJSONArray("verses")
