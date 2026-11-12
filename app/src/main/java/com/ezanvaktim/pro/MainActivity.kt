@@ -348,6 +348,20 @@ class MainActivity : Activity(), SensorEventListener {
         val notificationManager = getSystemService(NOTIFICATION_SERVICE) as NotificationManager
         notificationManager.createNotificationChannel(NotificationChannel(CHANNEL,"Namaz bildirimleri",NotificationManager.IMPORTANCE_HIGH))
         if (Build.VERSION.SDK_INT >= 33 && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) requestPermissions(arrayOf(Manifest.permission.POST_NOTIFICATIONS), 20)
+        if (Build.VERSION.SDK_INT >= 31) {
+            val alarmManager=getSystemService(ALARM_SERVICE) as AlarmManager
+            if(!alarmManager.canScheduleExactAlarms() && !prefs.getBoolean("exact_alarm_explained_v1",false)) {
+                prefs.edit().putBoolean("exact_alarm_explained_v1",true).apply()
+                android.app.AlertDialog.Builder(this)
+                    .setTitle("Kilit ekranında zamanında ezan")
+                    .setMessage("Ezanın vaktinde başlaması için Alarmlar ve hatırlatıcılar iznini açın. Ayrıca telefonun pil ayarlarında bu uygulamayı kısıtlamayın.")
+                    .setPositiveButton("İzin ayarını aç") { _,_ ->
+                        try { startActivity(Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM,Uri.parse("package:$packageName"))) }
+                        catch(_:Exception) { }
+                    }
+                    .setNegativeButton("Sonra",null).show()
+            }
+        }
         speech=android.speech.tts.TextToSpeech(this) { status ->
             speechReady=status==android.speech.tts.TextToSpeech.SUCCESS
             if(speechReady) {
@@ -2406,16 +2420,18 @@ class AlarmReceiver: android.content.BroadcastReceiver() {
         val mode=prefs.getInt("mode",0)
         val key=if(mode==0) "full" else "short"
         val audio=prefs.getString(key,null)
-        if(mode!=2 && !audio.isNullOrBlank()) {
-            try { context.startForegroundService(Intent(context,AdhanService::class.java).putExtra("name",name).putExtra("audio",audio)); return }
-            catch(_:Exception) { }
-        }
         val manager=context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         val openApp=PendingIntent.getActivity(context,0,Intent(context,MainActivity::class.java).apply { flags=Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP },PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
         val note=Notification.Builder(context,CHANNEL).setSmallIcon(android.R.drawable.ic_lock_idle_alarm).setContentTitle("$name vakti").setContentText("Namaz vakti geldi").setContentIntent(openApp).setAutoCancel(true).build()
         try {
             if(manager.areNotificationsEnabled()) manager.notify(name.hashCode(),note)
         } catch(_:SecurityException) { }
+        if(mode!=2 && !audio.isNullOrBlank()) {
+            try {
+                context.startForegroundService(Intent(context,AdhanService::class.java)
+                    .putExtra("name",name).putExtra("audio",audio))
+            } catch(_:Exception) { }
+        }
     }
 }
 
