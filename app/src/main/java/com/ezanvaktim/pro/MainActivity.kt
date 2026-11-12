@@ -54,6 +54,36 @@ class MainActivity : Activity(), SensorEventListener {
         try { tilavetPlayer?.release() } catch(_:Exception) { }
         tilavetPlayer=null
     }
+    private fun playQuranVerse(surahNumber:Int,ayahNumber:Int,reciter:String) {
+        val chapters=try { loadBundledOrImportedQuran().getJSONArray("surahs") }
+            catch(e:Exception) { Toast.makeText(this,"Kur'an ayetleri açılamadı",Toast.LENGTH_LONG).show(); return }
+        if(surahNumber !in 1..114) return
+        val count=chapters.getJSONObject(surahNumber-1).getJSONArray("verses").length()
+        if(ayahNumber !in 1..count) return
+        var global=ayahNumber
+        for(i in 0 until surahNumber-1) global+=chapters.getJSONObject(i).getJSONArray("verses").length()
+        stopReading()
+        stopTilavet()
+        val player=android.media.MediaPlayer()
+        tilavetPlayer=player
+        try {
+            player.setAudioAttributes(android.media.AudioAttributes.Builder()
+                .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build())
+            player.setDataSource("https://cdn.islamic.network/quran/audio/128/$reciter/$global.mp3")
+            player.setOnPreparedListener { if(tilavetPlayer===it) it.start() }
+            player.setOnCompletionListener { if(tilavetPlayer===it) stopTilavet() }
+            player.setOnErrorListener { _,_,_ ->
+                Toast.makeText(this,"Hafızın ayet kaydı açılamadı",Toast.LENGTH_LONG).show()
+                stopTilavet()
+                true
+            }
+            player.prepareAsync()
+        } catch(e:Exception) {
+            stopTilavet()
+            Toast.makeText(this,"Ayet sesi açılamadı",Toast.LENGTH_LONG).show()
+        }
+    }
     private fun playJuz(juzIndex:Int,reciter:String) {
         if(juzIndex !in 0..29) return
         stopReading()
@@ -1367,12 +1397,12 @@ class MainActivity : Activity(), SensorEventListener {
                     Triple("Furkân 25:74 • Aile duası","رَبَّنَا هَبْ لَنَا مِنْ أَزْوَاجِنَا وَذُرِّيَّاتِنَا قُرَّةَ أَعْيُنٍ وَاجْعَلْنَا لِلْمُتَّقِينَ إِمَامًا","Rabbimiz! Eşlerimizi ve çocuklarımızı bize göz aydınlığı kıl; bizi takvâ sahiplerine önder eyle.")
                 )
                 val duaSurahNumbers=mapOf(
-                    "Bakara 2:201" to 2,
-                    "Tâhâ 20:114" to 20,
-                    "A'râf 7:23" to 7,
-                    "Âl-i İmrân 3:8" to 3,
-                    "İbrâhîm 14:40" to 14,
-                    "Furkân 25:74" to 25
+                    "Bakara 2:201" to (2 to 201),
+                    "Tâhâ 20:114" to (20 to 114),
+                    "A'râf 7:23" to (7 to 23),
+                    "Âl-i İmrân 3:8" to (3 to 8),
+                    "İbrâhîm 14:40" to (14 to 40),
+                    "Furkân 25:74" to (25 to 74)
                 )
                 val duaReciters=listOf(
                     "Mişârî Râşid el-Afâsî" to "ar.alafasy",
@@ -1391,10 +1421,9 @@ class MainActivity : Activity(), SensorEventListener {
                         addView(text(meaning,16f,white))
                         val duaSurah=duaSurahNumbers.entries.firstOrNull { title.startsWith(it.key) }?.value
                         if(duaSurah!=null) {
-                            addView(button("▶ Duanın bulunduğu sûreyi hafızdan dinle") {
-                                playTilavet(duaSurah,duaReciters[duaReciterPicker.selectedItemPosition].second)
+                            addView(button("▶ Dua ayetini hafızdan dinle") {
+                                playQuranVerse(duaSurah.first,duaSurah.second,duaReciters[duaReciterPicker.selectedItemPosition].second)
                             })
-                            addView(text("Bu düğme yalnızca dua ayetini değil, sûrenin tamamını baştan okur.",12f))
                         }
                         addView(button("▶ Duayı Arapça sesli oku") { readAloud(arabic) })
                         addView(button("▶ Türkçe anlamını dinle") { readAloud(meaning,false) })
