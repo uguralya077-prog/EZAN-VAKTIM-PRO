@@ -150,6 +150,60 @@ class MainActivity : Activity(), SensorEventListener {
         val safe=reciter.replace(Regex("[^a-zA-Z0-9.]"),"_")
         return java.io.File(java.io.File(filesDir,"quran_audio/$safe"),"${number.toString().padStart(3,'0')}.mp3")
     }
+    private fun downloadAllSurahs() {
+        Toast.makeText(this,"114 sure indirmesi basladi. Uygulamayi acik tutun.",Toast.LENGTH_LONG).show()
+        thread {
+            var done=0
+            var failed=0
+            for(number in 1..114) {
+                val target=offlineSurahFile(number,"ar.alafasy")
+                if(target.length()>1024L) { done++; continue }
+                val temp=java.io.File(target.absolutePath+".part")
+                try {
+                    target.parentFile?.mkdirs()
+                    val conn=URL("https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/$number.mp3").openConnection() as java.net.HttpURLConnection
+                    conn.connectTimeout=15000
+                    conn.readTimeout=45000
+                    try {
+                        if(conn.responseCode !in 200..299) error("HTTP error")
+                        var total=0L
+                        conn.inputStream.use { input ->
+                            temp.outputStream().use { output ->
+                                val buf=ByteArray(16384)
+                                while(true) {
+                                    val n=input.read(buf)
+                                    if(n<0) break
+                                    total+=n
+                                    if(total>150L*1024*1024) error("Too large")
+                                    output.write(buf,0,n)
+                                }
+                            }
+                        }
+                        if(total<1024) error("Empty")
+                        val metadata=android.media.MediaMetadataRetriever()
+                        try {
+                            metadata.setDataSource(temp.absolutePath)
+                            if(metadata.extractMetadata(android.media.MediaMetadataRetriever.METADATA_KEY_DURATION).isNullOrBlank()) error("Invalid audio")
+                        } finally { metadata.release() }
+                        if(!temp.renameTo(target)) error("Save failed")
+                        done++
+                    } finally { conn.disconnect() }
+                } catch(_:Exception) { failed++; temp.delete() }
+                if(number%10==0 || number==114) {
+                    val progress=number
+                    val ready=done
+                    val errors=failed
+                    runOnUiThread { Toast.makeText(this,"Sureler: $progress/114; hazir $ready, hata $errors",Toast.LENGTH_SHORT).show() }
+                }
+            }
+            val ready=done
+            val errors=failed
+            runOnUiThread { android.app.AlertDialog.Builder(this)
+                .setTitle("Cevrim disi sureler")
+                .setMessage("$ready sure kaydedildi. $errors hata. Eksikler icin yeniden deneyin.")
+                .setPositiveButton("Tamam",null).show() }
+        }
+    }
     private fun downloadSurah(number:Int,reciter:String) {
         val target=offlineSurahFile(number,reciter)
         if(target.length()>1024L) {
@@ -588,18 +642,16 @@ class MainActivity : Activity(), SensorEventListener {
             }
             "Kıble" -> {
                 root.addView(text("KIBLE PUSULASI",23f,gold))
-                root.addView(text(locationLabel,15f,white).apply { gravity=Gravity.CENTER })
+                root.addView(text("Kâbe yönünü gösteren pusula",16f,white).apply { gravity=Gravity.CENTER })
                 dial=QiblaDial(this)
                 root.addView(dial,LinearLayout.LayoutParams(-1,(resources.displayMetrics.density*300).toInt()))
                 compass=text("Telefonu düz tutun. Sensör bekleniyor…",18f,gold).apply {
-                    gravity=Gravity.CENTER; minHeight=280
+                    gravity=Gravity.CENTER; minHeight=(70*resources.displayMetrics.density).toInt()
                 }
                 root.addView(compass)
-                root.addView(text("Kâbe yönü: %.1f° (gerçek kuzeye göre)".format(Locale("tr","TR"),qiblaBearing()),17f,gold))
                 root.addView(button("📍 Konumumu güncelle") { locate() })
                 root.addView(button("🏙 Şehir adıyla konum bul") { findCity() })
                 root.addView(text("Pusulayı 8 şeklinde hareket ettirerek kalibre edin. Telefonu düz ve metalden uzakta tutun.",14f))
-                root.addView(text("Manyetik alan ve metal eşyalar pusula doğruluğunu etkileyebilir.",15f))
             }
             "Ezan" -> {
                 root.addView(text("EZAN VE BİLDİRİMLER",22f,gold))
@@ -857,6 +909,8 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(text("KUR'AN-I KERİM",23f,gold))
                 root.addView(text("114 sûre Arapça çevrim dışı okuma • Türkçe meal isteğe bağlı",15f))
                 root.addView(text("114 sûrelik Arapça metin uygulama paketinde bulunur ve internetsiz okunur. Türkçe meal için izinli bir çeviri dosyası içe aktarabilir veya Diyanet sitesini çevrim içi açabilirsiniz.",14f))
+                root.addView(button("⬇ 114 sûreyi telefona indir • Mişârî el-Afâsî") { downloadAllSurahs() })
+                root.addView(text("Bir kez indirdikten sonra sûreleri internetsiz dinleyebilirsiniz. İndirme boyunca uygulamayı açık tutun.",13f,gold))
                 root.addView(button("📚 30 Cüz • cüzden ayete git") { section="Cüzler"; render() })
                 root.addView(button("Çevrim dışı kısa sûreler") {
                     section="Kısa Sûreler"
@@ -1008,8 +1062,7 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(text("KUR'AN-I KERİM • 30 CÜZ",23f,gold))
                 root.addView(text("Cüz başlangıcını seçin. İlgili sûre ve ayete geçilir. Sûreyi gerçek hafızdan dinleyebilirsiniz.",15f))
                 val juzReciters=listOf(
-                    "Mişârî Râşid el-Afâsî" to "ar.alafasy",
-                    "Mahmud Halil el-Husarî" to "ar.husary"
+                    "Mişârî Râşid el-Afâsî" to "ar.alafasy"
                 )
                 val juzPicker=Spinner(this).apply {
                     adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,juzReciters.map { it.first })
@@ -1152,9 +1205,8 @@ class MainActivity : Activity(), SensorEventListener {
                     root.addView(text("${index+1}. ${surah.getString("name")}",23f,gold))
                     root.addView(text("GERÇEK KUR'AN TİLAVETİ • internet gerektirir",17f,gold))
                     val reciters=listOf(
-                        "Mişârî Râşid el-Afâsî" to "ar.alafasy",
-                        "Mahmud Halil el-Husarî" to "ar.husary"
-                    )
+                        "Mişârî Râşid el-Afâsî" to "ar.alafasy"
+                        )
                     val reciterPicker=Spinner(this).apply {
                         adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,reciters.map { it.first })
                     }
@@ -1403,8 +1455,7 @@ class MainActivity : Activity(), SensorEventListener {
                     "Furkân 25:74" to (25 to 74)
                 )
                 val duaReciters=listOf(
-                    "Mişârî Râşid el-Afâsî" to "ar.alafasy",
-                    "Mahmud Halil el-Husarî" to "ar.husary"
+                    "Mişârî Râşid el-Afâsî" to "ar.alafasy"
                 )
                 val duaReciterPicker=Spinner(this).apply {
                     adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,duaReciters.map { it.first })
