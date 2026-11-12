@@ -464,11 +464,25 @@ class MainActivity : Activity(), SensorEventListener {
             "Ezan" -> {
                 root.addView(text("EZAN VE BİLDİRİMLER",22f,gold))
                 root.addView(text("Ezan sesi hazır gelmez: Tam veya kısa ezan için telefonunuzdan ses dosyası seçin. Dosya seçilmezse bildirim gösterilir, ezan sesi çalınmaz.",14f))
+                root.addView(button("▶ Gerçek ezan sesini şimdi test et") {
+                    val mode=prefs.getInt("mode",0)
+                    val audio=prefs.getString(if(mode==1) "short" else "full",null)
+                    if(audio.isNullOrBlank()) {
+                        Toast.makeText(this,"Önce tam veya kısa ezan kaydı seçin ya da indirin",Toast.LENGTH_LONG).show()
+                    } else try {
+                        startForegroundService(Intent(this,AdhanService::class.java)
+                            .putExtra("name","Deneme").putExtra("audio",audio))
+                        Toast.makeText(this,"Ezan ses testi başlatıldı",Toast.LENGTH_SHORT).show()
+                    } catch(e:Exception) {
+                        Toast.makeText(this,"Ezan testi başlatılamadı: ${e.message}",Toast.LENGTH_LONG).show()
+                    }
+                })
+                root.addView(text("Ses seçildiğinde veya indirildiğinde ezan modu otomatik etkinleşir. Dakik alarm izni gereklidir.",13f))
                 root.addView(button("Uygulama aktif / kapalı ayarına git") { section="Ayarlar"; render() })
                 val modes=arrayOf("Tam ezan","Kısa ezan","Sessiz bildirim")
                 val spinner=Spinner(this).apply {
                     adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,modes)
-                    setSelection(prefs.getInt("mode",2))
+                    setSelection(prefs.getInt("mode",0))
                 }
                 root.addView(spinner)
                 root.addView(button("Seçimi kaydet") {
@@ -1639,7 +1653,7 @@ class MainActivity : Activity(), SensorEventListener {
                     } finally { probe.release() }
                     if(destination.exists()) destination.delete()
                     if(!temp.renameTo(destination)) error("Ses dosyası kaydedilemedi")
-                    prefs.edit().putString(key,Uri.fromFile(destination).toString()).apply()
+                    prefs.edit().putString(key,Uri.fromFile(destination).toString()).putInt("mode",if(key=="full") 0 else 1).apply()
                     runOnUiThread {
                         Toast.makeText(this,"Ezan indirildi. Çevrim dışı kullanılabilir.",Toast.LENGTH_LONG).show()
                     }
@@ -1764,7 +1778,7 @@ class MainActivity : Activity(), SensorEventListener {
         if(resultCode==RESULT_OK && data?.data!=null && (requestCode==pickFull || requestCode==pickShort)) {
             val uri=data.data!!
             contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)
-            prefs.edit().putString(if(requestCode==pickFull) "full" else "short",uri.toString()).apply()
+            prefs.edit().putString(if(requestCode==pickFull) "full" else "short",uri.toString()).putInt("mode",if(requestCode==pickFull) 0 else 1).apply()
             Toast.makeText(this,"Ses kaydedildi",Toast.LENGTH_SHORT).show()
         }
     }
@@ -2197,10 +2211,10 @@ class AlarmReceiver: android.content.BroadcastReceiver() {
         val name=intent.getStringExtra("name") ?: "Namaz"
         val prefs=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
         if(!prefs.getBoolean("app_active",true) || !prefs.getBoolean("alarm_$name",true)) return
-        val mode=prefs.getInt("mode",2)
+        val mode=prefs.getInt("mode",0)
         val key=if(mode==0) "full" else "short"
         val audio=prefs.getString(key,null)
-        if(mode!=2 && audio!=null) {
+        if(mode!=2 && !audio.isNullOrBlank()) {
             try { context.startForegroundService(Intent(context,AdhanService::class.java).putExtra("name",name).putExtra("audio",audio)); return }
             catch(_:Exception) { }
         }
