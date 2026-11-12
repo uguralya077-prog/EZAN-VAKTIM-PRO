@@ -1081,7 +1081,8 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(text("KUR'AN-I KERİM • 30 CÜZ",23f,gold))
                 root.addView(text("Cüz başlangıcını seçin. İlgili sûre ve ayete geçilir. Sûreyi gerçek hafızdan dinleyebilirsiniz.",15f))
                 val juzReciters=listOf(
-                    "Mişârî Râşid el-Afâsî" to "ar.alafasy"
+                    "Mişârî Râşid el-Afâsî" to "ar.alafasy",
+                    "Mahmud Halil el-Husarî" to "ar.husary"
                 )
                 val juzPicker=Spinner(this).apply {
                     adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,juzReciters.map { it.first })
@@ -1224,7 +1225,8 @@ class MainActivity : Activity(), SensorEventListener {
                     root.addView(text("${index+1}. ${surah.getString("name")}",23f,gold))
                     root.addView(text("GERÇEK KUR'AN TİLAVETİ • internet gerektirir",17f,gold))
                     val reciters=listOf(
-                        "Mişârî Râşid el-Afâsî" to "ar.alafasy"
+                        "Mişârî Râşid el-Afâsî" to "ar.alafasy",
+                    "Mahmud Halil el-Husarî" to "ar.husary"
                         )
                     val reciterPicker=Spinner(this).apply {
                         adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,reciters.map { it.first })
@@ -1474,7 +1476,8 @@ class MainActivity : Activity(), SensorEventListener {
                     "Furkân 25:74" to (25 to 74)
                 )
                 val duaReciters=listOf(
-                    "Mişârî Râşid el-Afâsî" to "ar.alafasy"
+                    "Mişârî Râşid el-Afâsî" to "ar.alafasy",
+                    "Mahmud Halil el-Husarî" to "ar.husary"
                 )
                 val duaReciterPicker=Spinner(this).apply {
                     adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,duaReciters.map { it.first })
