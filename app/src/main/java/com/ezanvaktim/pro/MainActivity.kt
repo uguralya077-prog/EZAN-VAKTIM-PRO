@@ -1512,7 +1512,55 @@ class MainActivity : Activity(), SensorEventListener {
                     Triple("Salavat","Salavat","Allâhümme salli alâ Muhammed."),
                     Triple("Kur'an","Rabbena âtinâ (Bakara 2:201)","Rabbenâ âtinâ fid-dünyâ haseneten ve fil-âhireti haseneten ve kınâ azâben-nâr."),
                     Triple("Kur'an","İlim duası (Tâhâ 20:114)","Rabbi zidnî ilmâ."),
-                    Triple("Kur'an","Bağışlanma (A'râf 7:23)","Rabbenâ zalemnâ enfüsenâ ve in lem tağfir lenâ ve terhamnâ le-nekûnenne minel hâsirîn.")
+                    Triple("Kur'an","Bağışlanma (A'râf 7:23)","Rabbenâ zalemnâ enfüsenâ ve in lem tağfir lenâ ve terhamnâ le-nekûnenne minel hâsirîn."),
+                    Triple("Sabah","Uyanınca","Elhamdülillâhillezî ahyânâ ba‘de mâ emâtenâ ve ileyhin-nüşûr."),
+                    Triple("Akşam","Uyumadan önce","Bismikellâhümme emûtü ve ahyâ."),
+                    Triple("Sabah","Sabah zikri","Allâhümme bike asbahnâ ve bike emseynâ ve bike nahyâ ve bike nemûtü ve ileyken-nüşûr."),
+                    Triple("Akşam","Akşam zikri","Allâhümme bike emseynâ ve bike asbahnâ ve bike nahyâ ve bike nemûtü ve ileykel-masîr."),
+                    Triple("Yemek","Yemeği unutunca","Bismillâhi fî evvelihî ve âhirihî."),
+                    Triple("Yemek","İkram edene","Allâhümme bârik lehüm fîmâ razaktehüm vağfir lehüm verhamhüm."),
+                    Triple("Ev","Evden çıkarken","Bismillâhi tevekkeltü alallâh. Lâ havle ve lâ kuvvete illâ billâh."),
+                    Triple("Ev","Eve girerken","Bismillâhi velecnâ ve bismillâhi haracnâ ve alâ rabbinâ tevekkelnâ."),
+                    Triple("Yolculuk","Yolculuk duası","Sübhânellezî sehhara lenâ hâzâ ve mâ künnâ lehû mukrinîn. Ve innâ ilâ rabbinâ lemünkalibûn."),
+                    Triple("Yolculuk","Yolculukta kolaylık","Allâhümme hevvin aleynâ seferenâ hâzâ vatvi annâ bu‘deh."),
+                    Triple("Sağlık","Şifa duası","Allâhümme rabben-nâsi ezhibil-be'se işfi ente'ş-Şâfî, lâ şifâe illâ şifâüke."),
+                    Triple("Sağlık","Hasta ziyareti","Lâ be'se tahûrun inşâallâh."),
+                    Triple("Korunma","Kötülüklerden korunma","Eûzü bi-kelimâtillâhit-tâmmâti min şerri mâ halak."),
+                    Triple("Korunma","Sabah akşam korunma","Bismillâhillezî lâ yadurru measmihî şey'ün fil-ardı ve lâ fis-semâi ve hüves-Semîul-Alîm."),
+                    Triple("Korunma","Vesveseden korunma","Eûzü billâhi mineş-şeytânir-racîm."),
+                    Triple("Bağışlanma","Seyyidü'l-istiğfar","Allâhümme ente rabbî lâ ilâhe illâ ente, halaktenî ve ene abdüke ve ene alâ ahdike ve va‘dike mesteta‘tü. Eûzü bike min şerri mâ sana‘tü. Ebûü leke bi-ni‘metike aleyye ve ebûü bi-zenbî fağfirlî fe-innehû lâ yağfiruz-zünûbe illâ ente."),
+                    Triple("Bağışlanma","Tövbe duası","Rabbiğfirlî ve tüb aleyye inneke entet-Tevvâbur-Rahîm."),
+                    Triple("Namaz","Namaz sonrası istiğfar","Estağfirullâh. Estağfirullâh. Estağfirullâh."),
+                    Triple("Namaz","Namaz sonrası selam","Allâhümme entes-selâmü ve minkes-selâmü tebârekte yâ zel-celâli vel-ikrâm."),
+                    Triple("Namaz","Hidayet ve afiyet","Allâhümme innî es'elükel-hüdâ vet-tükâ vel-afâfe vel-ğınâ."),
+                    Triple("Namaz","Namaza yardım","Allâhümme einnî alâ zikrike ve şükrike ve husni ibâdetik."),
+                    Triple("İlim","Faydalı ilim","Allâhümme innî es'elüke ilmen nâfi‘an ve rizkan tayyiben ve amelen mütekabbelen."),
+                    Triple("Rızık","Helal rızık","Allâhümmekfinî bi-halâlike an harâmike ve ağninî bi-fadlike ammen sivâk."),
+                    Triple("Rızık","Bereket","Allâhümme bârik lenâ fîmâ razaktenâ."),
+                    Triple("Aile","Anne babaya dua","Rabbiğfirlî ve li-vâlideyye ve lil-mü'minîne yevme yekûmül-hisâb."),
+                    Triple("Aile","Aile huzuru","Rabbenâ heb lenâ min ezvâcinâ ve zürriyyâtinâ kurrate a‘yunin vec‘alnâ lil-müttakîne imâmâ."),
+                    Triple("Aile","Evlat için dua","Rabbi heb lî min ledünke zürriyyeten tayyibeten inneke semîud-duâ."),
+                    Triple("Zorluk","Sıkıntıda","Lâ ilâhe illâ ente sübhâneke innî küntü minez-zâlimîn."),
+                    Triple("Zorluk","İşlerin kolaylaşması","Rabbişrah lî sadrî ve yessir lî emrî."),
+                    Triple("Zorluk","Üzüntü ve keder","Allâhümme innî eûzü bike minel-hemmi vel-hazen."),
+                    Triple("Zorluk","Sabır","Rabbenâ efriğ aleynâ sabran ve sebbit akdâmenâ."),
+                    Triple("Şükür","Nimete şükür","Rabbi evzi‘nî en eşküra ni‘metekelletî en‘amte aleyye ve alâ vâlideyye."),
+                    Triple("Zikir","Havkale","Lâ havle ve lâ kuvvete illâ billâh."),
+                    Triple("Zikir","Kısa zikir","Sübhânallâhi ve bi-hamdihî."),
+                    Triple("Zikir","Tevhid zikri","Lâ ilâhe illallâhü vahdehû lâ şerîke leh, lehül-mülkü ve lehül-hamdü ve hüve alâ külli şey'in kadîr."),
+                    Triple("Salavat","İbrahimî salavat","Allâhümme salli alâ Muhammedin ve alâ âli Muhammed, kemâ salleyte alâ İbrâhîme ve alâ âli İbrâhîm."),
+                    Triple("Cenaze","Vefat haberi","İnnâ lillâhi ve innâ ileyhi râciûn."),
+                    Triple("Cenaze","Vefat eden için","Allâhümmağfir lehû verhamhû ve âfihî va‘fü anh."),
+                    Triple("Oruç","İftar duası","Zehebe'z-zamaü vebtelletil-urûku ve sebetel-ecru inşâallâh."),
+                    Triple("Oruç","Oruçluya ikram","Eftara indekümüs-sâimûn ve ekele taâmekümül-ebrâr ve sallet aleykümül-melâike."),
+                    Triple("Mescit","Mescide girerken","Allâhümmeftah lî ebvâbe rahmetik."),
+                    Triple("Mescit","Mescitten çıkarken","Allâhümme innî es'elüke min fadlik."),
+                    Triple("Temizlik","Tuvalete girmeden","Allâhümme innî eûzü bike minel-hubüsi vel-habâis."),
+                    Triple("Temizlik","Tuvaletten çıkınca","Ğufrânek."),
+                    Triple("Abdest","Abdest sonrası","Eşhedü en lâ ilâhe illallâhü vahdehû lâ şerîke leh ve eşhedü enne Muhammeden abdühû ve resûlüh."),
+                    Triple("Hava","Yağmur yağınca","Allâhümme sayyiben nâfi‘â."),
+                    Triple("Hava","Rüzgârda","Allâhümme innî es'elüke hayrahâ ve eûzü bike min şerrihâ."),
+                    Triple("Topluluk","Meclis kefareti","Sübhânekellâhümme ve bi-hamdike eşhedü en lâ ilâhe illâ ente estağfiruke ve etûbü ileyk.")
                 )
                 val duaFavorites=prefs.getStringSet("favorite_duas",emptySet())?.toMutableSet() ?: mutableSetOf()
                 val categories=listOf("Tümü")+duas.map { it.first }.distinct()
@@ -1580,7 +1628,7 @@ class MainActivity : Activity(), SensorEventListener {
                     override fun afterTextChanged(s:android.text.Editable?) {}
                 })
                 refreshDuas()
-                root.addView(text("Bu seçki tam Hisnü'l-Müslim kataloğu değildir. Arapça asıllar, anlamlar ve kaynak denetimi ilerleyen aşamada eklenecektir.",13f))
+                root.addView(text("Günlük dua seçkisi; metinler Latin harfli okunuşlardır. Kayıt bulunmayan dualar hafız sesi olarak sunulmaz.",13f))
             }
             "Zikir" -> {
                 zikrCount=prefs.getInt("zikr_count",0)
