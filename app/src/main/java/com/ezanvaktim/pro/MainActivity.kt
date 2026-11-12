@@ -1594,8 +1594,9 @@ class MainActivity : Activity(), SensorEventListener {
                             addView(text(group.uppercase(Locale("tr","TR")),13f,gold))
                             addView(text(title,19f,white))
                             addView(text(body,17f,gold))
-                            addView(button("▶ Duayı sesli oku") { readAloud(body,false) })
-                            addView(button("■ Okumayı durdur") { stopReading() })
+                            addView(button("▶ Hafız kaydını dinle") { playDailyDua(title) })
+                            addView(button("♫ Bu dua için ses kaydı seç") { selectDailyDua(title) })
+                            addView(button("■ Dinlemeyi durdur") { stopTilavet() })
                             addView(button(if(duaFavorites.contains(title)) "★ Favorilerimden çıkar" else "☆ Favorilere ekle") {
                                 if(!duaFavorites.add(title)) duaFavorites.remove(title)
                                 prefs.edit().putStringSet("favorite_duas",duaFavorites.toSet()).apply()
@@ -1946,10 +1947,50 @@ class MainActivity : Activity(), SensorEventListener {
             Toast.makeText(this,"Ses dosyası açılamadı. Dosyayı yeniden seçin.",Toast.LENGTH_LONG).show()
         }
     }
-    private fun pickAudio(code:Int) { startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply { type="audio/*"; addCategory(Intent.CATEGORY_OPENABLE) },code) }
+    private private fun playDailyDua(title:String) {
+        val uri=prefs.getString("dua_audio_"+title,null)
+        if(uri.isNullOrBlank()) {
+            Toast.makeText(this,"Bu dua için ses kaydı seçin",Toast.LENGTH_LONG).show()
+            return
+        }
+        stopReading()
+        stopTilavet()
+        try {
+            val player=android.media.MediaPlayer()
+            tilavetPlayer=player
+            player.setDataSource(this,Uri.parse(uri))
+            player.setOnPreparedListener { if(tilavetPlayer===it) it.start() }
+            player.setOnCompletionListener { if(tilavetPlayer===it) stopTilavet() }
+            player.setOnErrorListener { _,_,_ -> stopTilavet(); true }
+            player.prepareAsync()
+        } catch(e:Exception) {
+            stopTilavet()
+            Toast.makeText(this,"Dua sesi açılamadı: ${e.message}",Toast.LENGTH_LONG).show()
+        }
+    }
+    private fun selectDailyDua(title:String) {
+        prefs.edit().putString("dua_audio_pending",title).apply()
+        pickAudio(905)
+    }
+    fun pickAudio(code:Int) { startActivityForResult(Intent(Intent.ACTION_OPEN_DOCUMENT).apply { type="audio/*"; addCategory(Intent.CATEGORY_OPENABLE) },code) }
     @Deprecated("Activity result API compatibility")
     override fun onActivityResult(requestCode:Int,resultCode:Int,data:Intent?) {
         super.onActivityResult(requestCode,resultCode,data)
+        if(requestCode==905) {
+            val title=prefs.getString("dua_audio_pending",null)
+            prefs.edit().remove("dua_audio_pending").apply()
+            if(resultCode==RESULT_OK && title!=null && data?.data!=null) {
+                val uri=data.data!!
+                try {
+                    contentResolver.takePersistableUriPermission(uri,Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    prefs.edit().putString("dua_audio_"+title,uri.toString()).apply()
+                    Toast.makeText(this,"Dua ses kaydı seçildi; internetsiz dinlenebilir",Toast.LENGTH_LONG).show()
+                } catch(e:Exception) {
+                    Toast.makeText(this,"Ses izni alınamadı: ${e.message}",Toast.LENGTH_LONG).show()
+                }
+            }
+            return
+        }
         if(resultCode==RESULT_OK && requestCode==104 && data?.data!=null) {
             try {
                 val source=java.io.File(filesDir,"quran_import.json")
