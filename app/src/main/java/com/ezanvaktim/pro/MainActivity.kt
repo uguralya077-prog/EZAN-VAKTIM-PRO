@@ -687,6 +687,25 @@ class MainActivity : Activity(), SensorEventListener {
                     }
                 })
                 root.addView(text("Ses seçildiğinde veya indirildiğinde ezan modu otomatik etkinleşir. Dakik alarm izni gereklidir.",13f))
+                root.addView(panel().apply {
+                    addView(text("Kilit ekranında ezan ve bildirim",19f,gold))
+                    addView(text("Telefon ayarlarında bildirimlere izin verin ve uygulamanın pil kullanımını kısıtlamayın. Ezan için ayrıca tam/kısa ses kaydı seçilmelidir.",14f))
+                    addView(button("🔔 Bildirim ayarlarını aç") {
+                        try {
+                            startActivity(Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                                .putExtra(Settings.EXTRA_APP_PACKAGE,packageName))
+                        } catch(_:Exception) {
+                            Toast.makeText(this@MainActivity,"Ayarlar > Uygulamalar > Ezan Vaktim Pro > Bildirimler",Toast.LENGTH_LONG).show()
+                        }
+                    })
+                    addView(button("🔋 Pil ve arka plan ayarlarını aç") {
+                        try {
+                            startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,Uri.parse("package:$packageName")))
+                        } catch(_:Exception) {
+                            Toast.makeText(this@MainActivity,"Ayarlar > Uygulamalar > Ezan Vaktim Pro > Pil",Toast.LENGTH_LONG).show()
+                        }
+                    })
+                })
                 root.addView(button("Uygulama aktif / kapalı ayarına git") { section="Ayarlar"; render() })
                 val modes=arrayOf("Tam ezan","Kısa ezan","Sessiz bildirim")
                 val spinner=Spinner(this).apply {
