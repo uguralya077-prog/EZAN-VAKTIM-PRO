@@ -1164,11 +1164,36 @@ class MainActivity : Activity(), SensorEventListener {
                     Triple("İbrâhîm 14:40 • Namaz duası","رَبِّ اجْعَلْنِي مُقِيمَ الصَّلَاةِ وَمِنْ ذُرِّيَّتِي رَبَّنَا وَتَقَبَّلْ دُعَاءِ","Rabbim! Beni ve soyumdan gelecekleri namazı devamlı kılanlardan eyle. Rabbimiz, duamı kabul et."),
                     Triple("Furkân 25:74 • Aile duası","رَبَّنَا هَبْ لَنَا مِنْ أَزْوَاجِنَا وَذُرِّيَّاتِنَا قُرَّةَ أَعْيُنٍ وَاجْعَلْنَا لِلْمُتَّقِينَ إِمَامًا","Rabbimiz! Eşlerimizi ve çocuklarımızı bize göz aydınlığı kıl; bizi takvâ sahiplerine önder eyle.")
                 )
+                val duaSurahNumbers=mapOf(
+                    "Bakara 2:201" to 2,
+                    "Tâhâ 20:114" to 20,
+                    "A'râf 7:23" to 7,
+                    "Âl-i İmrân 3:8" to 3,
+                    "İbrâhîm 14:40" to 14,
+                    "Furkân 25:74" to 25
+                )
+                val duaReciters=listOf(
+                    "Mişârî Râşid el-Afâsî" to "ar.alafasy",
+                    "Abdülbasit Abdüssamed" to "ar.abdulbasitmurattal",
+                    "Mahmud Halil el-Husarî" to "ar.husary"
+                )
+                val duaReciterPicker=Spinner(this).apply {
+                    adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,duaReciters.map { it.first })
+                }
+                root.addView(text("Hafız seçimi (Kur'an'daki duaların bulunduğu sûreleri dinlemek için)",14f,gold))
+                root.addView(duaReciterPicker)
                 quranDuas.forEach { (title,arabic,meaning) ->
                     root.addView(panel().apply {
                         addView(text(title,17f,gold))
                         addView(text(arabic,24f,white).apply { gravity=Gravity.RIGHT; textDirection=android.view.View.TEXT_DIRECTION_RTL })
                         addView(text(meaning,16f,white))
+                        val duaSurah=duaSurahNumbers.entries.firstOrNull { title.startsWith(it.key) }?.value
+                        if(duaSurah!=null) {
+                            addView(button("▶ Duanın bulunduğu sûreyi hafızdan dinle") {
+                                playTilavet(duaSurah,duaReciters[duaReciterPicker.selectedItemPosition].second)
+                            })
+                            addView(text("Bu düğme yalnızca dua ayetini değil, sûrenin tamamını baştan okur.",12f))
+                        }
                         addView(button("▶ Duayı Arapça sesli oku") { readAloud(arabic) })
                         addView(button("▶ Türkçe anlamını dinle") { readAloud(meaning,false) })
                         addView(button("■ Okumayı durdur") { stopReading() })
