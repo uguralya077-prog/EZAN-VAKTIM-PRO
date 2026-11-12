@@ -47,10 +47,74 @@ class MainActivity : Activity(), SensorEventListener {
     private var dial: QiblaDial? = null
     private var audioPreview:android.media.MediaPlayer?=null
     private var tilavetPlayer:android.media.MediaPlayer?=null
+    private var juzPlaybackGeneration=0
     private fun stopTilavet() {
+        juzPlaybackGeneration++
         try { tilavetPlayer?.stop() } catch(_:Exception) { }
         try { tilavetPlayer?.release() } catch(_:Exception) { }
         tilavetPlayer=null
+    }
+    private fun playJuz(juzIndex:Int,reciter:String) {
+        if(juzIndex !in 0..29) return
+        stopReading()
+        stopTilavet()
+        val generation=juzPlaybackGeneration
+        val start=juzStarts[juzIndex]
+        val end=if(juzIndex==29) 115 to 1 else juzStarts[juzIndex+1]
+        val chapters=try { loadBundledOrImportedQuran().getJSONArray("surahs") }
+            catch(e:Exception) {
+                Toast.makeText(this,"Cüz ayetleri okunamadı",Toast.LENGTH_LONG).show()
+                return
+            }
+        val verseNumbers=mutableListOf<Int>()
+        var global=0
+        for(surah in 1..114) {
+            val count=chapters.getJSONObject(surah-1).getJSONArray("verses").length()
+            for(ayah in 1..count) {
+                global++
+                if((surah>start.first || surah==start.first && ayah>=start.second) &&
+                    (surah<end.first || surah==end.first && ayah<end.second)) verseNumbers.add(global)
+            }
+        }
+        if(verseNumbers.isEmpty()) {
+            Toast.makeText(this,"Bu cüz için ayet bulunamadı",Toast.LENGTH_LONG).show()
+            return
+        }
+        var position=0
+        fun next() {
+            if(generation!=juzPlaybackGeneration) return
+            if(position>=verseNumbers.size) {
+                Toast.makeText(this,"Cüz tamamlandı",Toast.LENGTH_LONG).show()
+                stopTilavet()
+                return
+            }
+            val number=verseNumbers[position++]
+            val url="https://cdn.islamic.network/quran/audio/128/$reciter/$number.mp3"
+            val player=android.media.MediaPlayer()
+            try {
+                tilavetPlayer?.release()
+                tilavetPlayer=player
+                player.setAudioAttributes(android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build())
+                player.setDataSource(url)
+                player.setOnPreparedListener { if(generation==juzPlaybackGeneration) it.start() }
+                player.setOnCompletionListener { if(generation==juzPlaybackGeneration) next() }
+                player.setOnErrorListener { _,what,extra ->
+                    if(generation==juzPlaybackGeneration) {
+                        Toast.makeText(this,"Cüz ses bağlantısı hatası ($what/$extra)",Toast.LENGTH_LONG).show()
+                        stopTilavet()
+                    }
+                    true
+                }
+                player.prepareAsync()
+            } catch(e:Exception) {
+                Toast.makeText(this,"Cüz okunamadı: ${e.message}",Toast.LENGTH_LONG).show()
+                stopTilavet()
+            }
+        }
+        Toast.makeText(this,"${juzIndex+1}. cüz ayet ayet yükleniyor",Toast.LENGTH_SHORT).show()
+        next()
     }
     private fun offlineSurahFile(number:Int,reciter:String):java.io.File {
         val safe=reciter.replace(Regex("[^a-zA-Z0-9.]"),"_")
@@ -789,11 +853,25 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(button("← Kur'an'a dön") { section="Kur'an"; render() })
                 root.addView(text("KUR'AN-I KERİM • 30 CÜZ",23f,gold))
                 root.addView(text("Cüz başlangıcını seçin. İlgili sûre ve ayete geçilir. Sûreyi gerçek hafızdan dinleyebilirsiniz.",15f))
+                val juzReciters=listOf(
+                    "Mişârî Râşid el-Afâsî" to "ar.alafasy",
+                    "Abdülbasit Abdüssamed" to "ar.abdulbasitmurattal",
+                    "Mahmud Halil el-Husarî" to "ar.husary"
+                )
+                val juzPicker=Spinner(this).apply {
+                    adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,juzReciters.map { it.first })
+                }
+                root.addView(juzPicker)
+                root.addView(button("■ Cüz tilavetini durdur") { stopTilavet() })
+                root.addView(text("Cüz tilaveti seçilen ayetten başlar, sonraki cüzün ilk ayetinden önce biter. Her ayet için internet gerekir.",13f))
                 try {
                     val chapters=loadBundledOrImportedQuran().getJSONArray("surahs")
                     juzStarts.forEachIndexed { i, pair ->
                         val (surah,ayah)=pair
                         val title=chapters.getJSONObject(surah-1).getString("name")
+                        root.addView(button("▶ ${i+1}. cüzü hafızdan dinle") {
+                            playJuz(i,juzReciters[juzPicker.selectedItemPosition].second)
+                        })
                         root.addView(button("${i+1}. Cüz  •  $title  •  $ayah. ayet") {
                             prefs.edit().putInt("quran_import_last",surah-1)
                                 .putInt("quran_search_jump_verse",ayah-1).apply()
