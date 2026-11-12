@@ -384,7 +384,7 @@ class MainActivity : Activity(), SensorEventListener {
     private fun panel():LinearLayout=LinearLayout(this).apply {
         orientation=LinearLayout.VERTICAL
         setPadding(18,16,18,16)
-        background=rounded(surface,Color.rgb(54,88,70),18f)
+        background=android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.TL_BR,intArrayOf(Color.rgb(19,56,49),Color.rgb(10,36,38))).apply { cornerRadius=22f*resources.displayMetrics.density; setStroke((1*resources.displayMetrics.density).toInt(),Color.rgb(78,113,93)) }
         elevation=4f*resources.displayMetrics.density
         layoutParams=LinearLayout.LayoutParams(-1,-2).apply {
             val d=resources.displayMetrics.density
@@ -396,7 +396,7 @@ class MainActivity : Activity(), SensorEventListener {
         textSize=15f*prefs.getFloat("font_scale",1f)
         isAllCaps=false
         setTextColor(accent)
-        background=rounded(Color.rgb(22,60,49),Color.rgb(95,119,84),14f)
+        background=android.graphics.drawable.GradientDrawable(android.graphics.drawable.GradientDrawable.Orientation.TL_BR,intArrayOf(Color.rgb(26,83,65),Color.rgb(12,48,43))).apply { cornerRadius=18f*resources.displayMetrics.density; setStroke((1*resources.displayMetrics.density).toInt(),Color.rgb(116,136,94)) }
         setPadding(14,12,14,12)
         minHeight=(48*resources.displayMetrics.density).toInt()
         setOnClickListener { click() }
@@ -655,7 +655,12 @@ class MainActivity : Activity(), SensorEventListener {
             }
             "Ezan" -> {
                 root.addView(text("EZAN VE BİLDİRİMLER",22f,gold))
-                root.addView(text("Ezan sesi hazır gelmez: Tam veya kısa ezan için telefonunuzdan ses dosyası seçin. Dosya seçilmezse bildirim gösterilir, ezan sesi çalınmaz.",14f))
+                root.addView(panel().apply {
+                    addView(text("EZAN SESİ KURULUMU",20f,gold))
+                    addView(text("Telefonunuzdaki bir ezan MP3 kaydını seçin veya aşağıdaki bağlantı alanından indirin. Seçtiğiniz ses telefona kaydedilir ve vakitlerde çalınır.",15f))
+                    val configured=prefs.getString("full",null)
+                    addView(text(if(configured.isNullOrBlank()) "⚠ Ezan kaydı henüz ayarlanmadı" else "✓ Ezan kaydı ayarlı",17f,if(configured.isNullOrBlank()) Color.rgb(255,185,125) else gold))
+                })
                 root.addView(button("▶ Gerçek ezan sesini şimdi test et") {
                     val mode=prefs.getInt("mode",0)
                     val audio=prefs.getString(if(mode==1) "short" else "full",null)
