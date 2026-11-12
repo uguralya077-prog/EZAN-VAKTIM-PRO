@@ -651,12 +651,10 @@ class MainActivity : Activity(), SensorEventListener {
                 timesBox=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
                 root.addView(timesBox)
                 root.addView(button("Vakitleri yenile") { loadTimes() })
-                root.addView(text("Kaynak: AlAdhan hesaplama servisi; Diyanet'in resmî verisi değildir.",12f,Color.LTGRAY))
                 loadTimes()
             }
             "Kıble" -> {
                 root.addView(text("KIBLE PUSULASI",23f,gold))
-                root.addView(text("Kâbe yönünü gösteren pusula",16f,white).apply { gravity=Gravity.CENTER })
                 dial=QiblaDial(this)
                 root.addView(dial,LinearLayout.LayoutParams(-1,(resources.displayMetrics.density*300).toInt()))
                 compass=text("Telefonu düz tutun. Sensör bekleniyor…",18f,gold).apply {
@@ -665,7 +663,7 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(compass)
                 root.addView(button("📍 Konumumu güncelle") { locate() })
                 root.addView(button("🏙 Şehir adıyla konum bul") { findCity() })
-                root.addView(text("Pusulayı 8 şeklinde hareket ettirerek kalibre edin. Telefonu düz ve metalden uzakta tutun.",14f))
+                root.addView(text("Telefonu düz tutun; ok Kâbe yönünü gösterir.",14f))
             }
             "Ezan" -> {
                 root.addView(text("EZAN VE BİLDİRİMLER",22f,gold))
@@ -1125,8 +1123,6 @@ class MainActivity : Activity(), SensorEventListener {
                         translatedVerses+=surah.optJSONArray("translations")?.length() ?: 0
                     }
                     root.addView(text("İçe aktarılan: ${items.length()} sûre • $totalVerses ayet • $translatedVerses meal satırı",14f,accent))
-                    root.addView(text("Arapça kaynak: ${source.ifBlank { "Belirtilmemiş" }}",13f))
-                    root.addView(text("Meal kaynağı: ${translationSource.ifBlank { "Belirtilmemiş" }}",13f))
                     root.addView(button("Kur'an içinde ayet veya meal ara") {
                         val input=EditText(this).apply {
                             hint="Arapça ayet veya Türkçe kelime"
@@ -1457,7 +1453,7 @@ class MainActivity : Activity(), SensorEventListener {
             }
             "Dualar" -> {
                 root.addView(text("GÜNLÜK DUALAR VE ZİKİRLER",23f,gold))
-                root.addView(text("Duaları sesli dinleyebilir, arayabilir ve favorilerinize ekleyebilirsiniz. Türkçe okunuşlar telefonun ses motoruyla okunur.",15f))
+                root.addView(text("Kur’an’daki duaları hafızdan dinleyin.",15f))
                 root.addView(text("KUR'AN'DAN DUALAR • ARAPÇA VE TÜRKÇE ANLAMI",18f,gold))
                 val quranDuas=listOf(
                     Triple("Bakara 2:201 • Dünya ve ahiret iyiliği","رَبَّنَا آتِنَا فِي الدُّنْيَا حَسَنَةً وَفِي الْآخِرَةِ حَسَنَةً وَقِنَا عَذَابَ النَّارِ","Rabbimiz! Bize dünyada iyilik, ahirette de iyilik ver; bizi ateşin azabından kor."),
@@ -1482,7 +1478,7 @@ class MainActivity : Activity(), SensorEventListener {
                 val duaReciterPicker=Spinner(this).apply {
                     adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,duaReciters.map { it.first })
                 }
-                root.addView(text("Hafız seçimi (Kur'an'daki duaların bulunduğu sûreleri dinlemek için)",14f,gold))
+                root.addView(text("Dua tilaveti • Hafız seçimi",14f,gold))
                 root.addView(duaReciterPicker)
                 quranDuas.forEach { (title,arabic,meaning) ->
                     root.addView(panel().apply {
@@ -1495,9 +1491,7 @@ class MainActivity : Activity(), SensorEventListener {
                                 playQuranVerse(duaSurah.first,duaSurah.second,duaReciters[duaReciterPicker.selectedItemPosition].second)
                             })
                         }
-                        addView(button("▶ Duayı Arapça sesli oku") { readAloud(arabic) })
-                        addView(button("▶ Türkçe anlamını dinle") { readAloud(meaning,false) })
-                        addView(button("■ Okumayı durdur") { stopReading() })
+                        addView(button("■ Tilaveti durdur") { stopTilavet() })
                         addView(button("Duayı kopyala") {
                             val clipboard=getSystemService(CLIPBOARD_SERVICE) as android.content.ClipboardManager
                             clipboard.setPrimaryClip(ClipData.newPlainText(title,"$title\n$arabic\n$meaning"))
