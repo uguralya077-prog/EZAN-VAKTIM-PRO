@@ -142,6 +142,7 @@ class MainActivity : Activity(), SensorEventListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        migratePrayerCalculationCache(prefs)
         latitude = java.lang.Double.longBitsToDouble(prefs.getLong("lat", java.lang.Double.doubleToRawLongBits(latitude)))
         longitude = java.lang.Double.longBitsToDouble(prefs.getLong("lon", java.lang.Double.doubleToRawLongBits(longitude)))
         locationLabel = prefs.getString("place", locationLabel) ?: locationLabel
@@ -1712,7 +1713,7 @@ class MainActivity : Activity(), SensorEventListener {
         timesBox.removeAllViews(); timesBox.addView(text("Vakitler yükleniyor…",16f))
         thread {
             try {
-                val url=URL("https://api.aladhan.com/v1/timings/$date?latitude=$requestedLat&longitude=$requestedLon&method=13")
+                val url=URL("https://api.aladhan.com/v1/timings/$date?latitude=$requestedLat&longitude=$requestedLon&method=13&school=0")
                 val connection=(url.openConnection() as java.net.HttpURLConnection).apply {
                     connectTimeout=10000
                     readTimeout=10000
@@ -1771,7 +1772,7 @@ class MainActivity : Activity(), SensorEventListener {
                 thread {
                     try {
                         val date=tomorrow.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
-                        val url=URL("https://api.aladhan.com/v1/timings/$date?latitude=$lat&longitude=$lon&method=13")
+                        val url=URL("https://api.aladhan.com/v1/timings/$date?latitude=$lat&longitude=$lon&method=13&school=0")
                         val connection=url.openConnection().apply { connectTimeout=10000; readTimeout=10000 }
                         val json=JSONObject(connection.getInputStream().bufferedReader().use { it.readText() })
                         val timing=json.getJSONObject("data").getJSONObject("timings")
@@ -1928,6 +1929,13 @@ object AlarmScheduler {
     }
 }
 
+private fun migratePrayerCalculationCache(prefs:android.content.SharedPreferences) {
+    if(prefs.getBoolean("prayer_school_standard_v1",false)) return
+    val editor=prefs.edit()
+    prefs.all.keys.filter { it.startsWith("times_") }.forEach { editor.remove(it) }
+    editor.putBoolean("prayer_school_standard_v1",true).commit()
+}
+
 object PrayerRefresh {
     private fun pruneOldPrayerCache(prefs:android.content.SharedPreferences) {
         val oldest=LocalDate.now().minusDays(3)
@@ -1953,6 +1961,7 @@ object PrayerRefresh {
     }
     fun refreshFromCache(context:Context) {
         val prefs=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
+        migratePrayerCalculationCache(prefs)
         val lat=java.lang.Double.longBitsToDouble(prefs.getLong("lat",java.lang.Double.doubleToRawLongBits(37.5753)))
         val lon=java.lang.Double.longBitsToDouble(prefs.getLong("lon",java.lang.Double.doubleToRawLongBits(36.9228)))
         val cached=prefs.getString("times_${LocalDate.now()}_${lat}_${lon}",null) ?: run {
@@ -1976,6 +1985,7 @@ object PrayerRefresh {
     }
     fun refresh(context:Context,forceNetwork:Boolean=false) {
         val prefs=context.getSharedPreferences(PREF,Context.MODE_PRIVATE)
+        migratePrayerCalculationCache(prefs)
         val lat=java.lang.Double.longBitsToDouble(prefs.getLong("lat",java.lang.Double.doubleToRawLongBits(37.5753)))
         val lon=java.lang.Double.longBitsToDouble(prefs.getLong("lon",java.lang.Double.doubleToRawLongBits(36.9228)))
         val today=LocalDate.now()
@@ -1986,7 +1996,7 @@ object PrayerRefresh {
         } catch(_:Exception) { null } else null
         val validTimings=timings ?: run {
             val date=today.format(DateTimeFormatter.ofPattern("dd-MM-yyyy"))
-            val url=URL("https://api.aladhan.com/v1/timings/$date?latitude=$lat&longitude=$lon&method=13")
+            val url=URL("https://api.aladhan.com/v1/timings/$date?latitude=$lat&longitude=$lon&method=13&school=0")
             val connection=(url.openConnection() as java.net.HttpURLConnection).apply { connectTimeout=12000; readTimeout=12000; requestMethod="GET" }
             try {
                 if(connection.responseCode !in 200..299) throw IllegalStateException("Vakit servisi HTTP hatası")
