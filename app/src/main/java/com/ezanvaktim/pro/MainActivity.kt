@@ -1009,7 +1009,6 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(text("Cüz başlangıcını seçin. İlgili sûre ve ayete geçilir. Sûreyi gerçek hafızdan dinleyebilirsiniz.",15f))
                 val juzReciters=listOf(
                     "Mişârî Râşid el-Afâsî" to "ar.alafasy",
-                    "Abdülbasit Abdüssamed" to "ar.abdulbasitmurattal",
                     "Mahmud Halil el-Husarî" to "ar.husary"
                 )
                 val juzPicker=Spinner(this).apply {
@@ -1154,7 +1153,6 @@ class MainActivity : Activity(), SensorEventListener {
                     root.addView(text("GERÇEK KUR'AN TİLAVETİ • internet gerektirir",17f,gold))
                     val reciters=listOf(
                         "Mişârî Râşid el-Afâsî" to "ar.alafasy",
-                        "Abdülbasit Abdüssamed" to "ar.abdulbasitmurattal",
                         "Mahmud Halil el-Husarî" to "ar.husary"
                     )
                     val reciterPicker=Spinner(this).apply {
@@ -1406,7 +1404,6 @@ class MainActivity : Activity(), SensorEventListener {
                 )
                 val duaReciters=listOf(
                     "Mişârî Râşid el-Afâsî" to "ar.alafasy",
-                    "Abdülbasit Abdüssamed" to "ar.abdulbasitmurattal",
                     "Mahmud Halil el-Husarî" to "ar.husary"
                 )
                 val duaReciterPicker=Spinner(this).apply {
