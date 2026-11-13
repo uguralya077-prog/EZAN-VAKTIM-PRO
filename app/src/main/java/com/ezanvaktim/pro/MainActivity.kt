@@ -1718,6 +1718,52 @@ class MainActivity : Activity(), SensorEventListener {
                 }
                 root.addView(text("Kur'an ayetleri: seçilen hafızın internet üzerinden tilaveti. Diğer dualar: eklenmiş ses kaydı veya cihaz sesli okuması.",14f,gold))
                 root.addView(dailyDuaReciter)
+                root.addView(button("Kur'an dualarını iki hafızla telefona kaydet") {
+                    val verses=listOf(2 to 201,20 to 114,7 to 23,21 to 87,28 to 24,
+                        14 to 41,20 to 25,2 to 286,3 to 8,59 to 10,3 to 193,25 to 65,2 to 250)
+                    Toast.makeText(this@MainActivity,"26 hafız kaydı indiriliyor. İnternet gerekli.",Toast.LENGTH_LONG).show()
+                    thread {
+                        var completed=0
+                        var failed=0
+                        try {
+                            val surahs=loadBundledOrImportedQuran().getJSONArray("surahs")
+                            val folder=java.io.File(filesDir,"quran_verse_audio").apply { mkdirs() }
+                            for((surah,verse) in verses) {
+                                var global=verse
+                                for(i in 0 until surah-1) global+=surahs.getJSONObject(i).getJSONArray("verses").length()
+                                for((_,reciter) in dailyDuaReciters) {
+                                    val file=java.io.File(folder,"${reciter}_${global}.mp3")
+                                    if(file.isFile && file.length()>1024L) { completed++; continue }
+                                    val partial=java.io.File(folder,"${reciter}_${global}.part")
+                                    try {
+                                        val conn=java.net.URL("https://cdn.islamic.network/quran/audio/128/$reciter/$global.mp3")
+                                            .openConnection().apply { connectTimeout=12000; readTimeout=20000 }
+                                        var bytes=0L
+                                        conn.getInputStream().use { input ->
+                                            partial.outputStream().use { output ->
+                                                val buffer=ByteArray(16384)
+                                                while(true) {
+                                                    val n=input.read(buffer)
+                                                    if(n<0) break
+                                                    bytes+=n
+                                                    if(bytes>12L*1024L*1024L) error("Audio limit exceeded")
+                                                    output.write(buffer,0,n)
+                                                }
+                                            }
+                                        }
+                                        if(bytes<1024L || !partial.renameTo(file)) error("Invalid audio")
+                                        completed++
+                                    } catch(_:Exception) { failed++; partial.delete() }
+                                }
+                            }
+                        } catch(_:Exception) { failed+=26-completed-failed }
+                        runOnUiThread {
+                            Toast.makeText(this@MainActivity,
+                                "Hafız kayıtları: $completed/26 hazır, $failed başarısız. Kaydedilenler internetsiz çalışır.",
+                                Toast.LENGTH_LONG).show()
+                        }
+                    }
+                })
                 val duaFavorites=prefs.getStringSet("favorite_duas",emptySet())?.toMutableSet() ?: mutableSetOf()
                 val categories=listOf("Tümü")+duas.map { it.first }.distinct()
                 val category=Spinner(this).apply {
