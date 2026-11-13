@@ -1631,7 +1631,7 @@ class MainActivity : Activity(), SensorEventListener {
                     Triple("Kur'an","Anne baba için (İbrâhîm 14:41)","Rabbenâğfirlî ve li-vâlideyye ve lil-mü'minîne yevme yekûmül-hisâb."),
                     Triple("Kur'an","Gönül ferahlığı (Tâhâ 20:25)","Rabbişrah lî sadrî."),
                     Triple("Kur'an","Gücümüzün üstünde yük (Bakara 2:286)","Rabbenâ ve lâ tühammilnâ mâ lâ tâkate lenâ bih."),
-                    Triple("Zikir","Havkale","Lâ havle ve lâ kuvvete illâ billâh."),
+
                     Triple("Zikir","Sübhânallâhi ve bihamdihî","Sübhânallâhi ve bihamdihî."),
                     Triple("Bağışlanma","Rabbim beni bağışla","Rabbiğfirlî."),
                     Triple("Korunma","Şeytanın vesvesesinden","Eûzü billâhi mineş-şeytânirracîm."),
@@ -1675,7 +1675,7 @@ class MainActivity : Activity(), SensorEventListener {
                 val dailyDuaReciter=Spinner(this).apply {
                     adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,dailyDuaReciters.map { it.first })
                 }
-                root.addView(text("Hafız seçimi • Kur'an ayetlerinden dualar",15f,gold))
+                root.addView(text("Kur'an ayetleri: seçilen hafızın internet üzerinden tilaveti. Diğer dualar: eklenmiş ses kaydı veya cihaz sesli okuması.",14f,gold))
                 root.addView(dailyDuaReciter)
                 val duaFavorites=prefs.getStringSet("favorite_duas",emptySet())?.toMutableSet() ?: mutableSetOf()
                 val categories=listOf("Tümü")+duas.map { it.first }.distinct()
