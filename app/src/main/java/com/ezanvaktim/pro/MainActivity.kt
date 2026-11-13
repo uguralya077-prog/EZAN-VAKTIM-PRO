@@ -654,16 +654,18 @@ class MainActivity : Activity(), SensorEventListener {
                 loadTimes()
             }
             "Kıble" -> {
-                root.addView(text("KIBLE PUSULASI",23f,gold))
-                dial=QiblaDial(this)
-                root.addView(dial,LinearLayout.LayoutParams(-1,(resources.displayMetrics.density*300).toInt()))
-                compass=text("Telefonu düz tutun. Sensör bekleniyor…",18f,gold).apply {
-                    gravity=Gravity.CENTER; minHeight=(70*resources.displayMetrics.density).toInt()
-                }
-                root.addView(compass)
+                root.addView(text("🕋  KIBLE",25f,gold).apply { gravity=Gravity.CENTER })
+                root.addView(panel().apply {
+                    dial=QiblaDial(this@MainActivity)
+                    addView(dial,LinearLayout.LayoutParams(-1,(resources.displayMetrics.density*320).toInt()))
+                    compass=text("🧭",18f,gold).apply {
+                        gravity=Gravity.CENTER
+                        minHeight=(48*resources.displayMetrics.density).toInt()
+                    }
+                    addView(compass)
+                })
                 root.addView(button("📍 Konumumu güncelle") { locate() })
-                root.addView(button("🏙 Şehir adıyla konum bul") { findCity() })
-                root.addView(text("Telefonu düz tutun; ok Kâbe yönünü gösterir.",14f))
+                root.addView(button("🏙 Şehir seç") { findCity() })
             }
             "Ezan" -> {
                 root.addView(text("EZAN VE BİLDİRİMLER",22f,gold))
@@ -1480,7 +1482,14 @@ class MainActivity : Activity(), SensorEventListener {
                     Triple("A'râf 7:23 • Bağışlanma","رَبَّنَا ظَلَمْنَا أَنْفُسَنَا وَإِنْ لَمْ تَغْفِرْ لَنَا وَتَرْحَمْنَا لَنَكُونَنَّ مِنَ الْخَاسِرِينَ","Rabbimiz! Biz kendimize zulmettik. Bizi bağışlamaz ve bize merhamet etmezsen mutlaka ziyana uğrayanlardan oluruz."),
                     Triple("Âl-i İmrân 3:8 • Kalbin doğruluğu","رَبَّنَا لَا تُزِغْ قُلُوبَنَا بَعْدَ إِذْ هَدَيْتَنَا وَهَبْ لَنَا مِنْ لَدُنْكَ رَحْمَةً إِنَّكَ أَنْتَ الْوَهَّابُ","Rabbimiz! Bizi doğru yola ilettikten sonra kalplerimizi eğriltme; bize katından rahmet bağışla. Şüphesiz çok bağışlayan sensin."),
                     Triple("İbrâhîm 14:40 • Namaz duası","رَبِّ اجْعَلْنِي مُقِيمَ الصَّلَاةِ وَمِنْ ذُرِّيَّتِي رَبَّنَا وَتَقَبَّلْ دُعَاءِ","Rabbim! Beni ve soyumdan gelecekleri namazı devamlı kılanlardan eyle. Rabbimiz, duamı kabul et."),
-                    Triple("Furkân 25:74 • Aile duası","رَبَّنَا هَبْ لَنَا مِنْ أَزْوَاجِنَا وَذُرِّيَّاتِنَا قُرَّةَ أَعْيُنٍ وَاجْعَلْنَا لِلْمُتَّقِينَ إِمَامًا","Rabbimiz! Eşlerimizi ve çocuklarımızı bize göz aydınlığı kıl; bizi takvâ sahiplerine önder eyle.")
+                    Triple("Furkân 25:74 • Aile duası","رَبَّنَا هَبْ لَنَا مِنْ أَزْوَاجِنَا وَذُرِّيَّاتِنَا قُرَّةَ أَعْيُنٍ وَاجْعَلْنَا لِلْمُتَّقِينَ إِمَامًا","Rabbimiz! Eşlerimizi ve çocuklarımızı bize göz aydınlığı kıl; bizi takvâ sahiplerine önder eyle."),
+                    Triple("Enbiyâ 21:87 • Yunus peygamberin duası","لَا إِلَٰهَ إِلَّا أَنْتَ سُبْحَانَكَ إِنِّي كُنْتُ مِنَ الظَّالِمِينَ","Senden başka ilah yoktur. Seni tenzih ederim. Gerçekten ben haksızlık edenlerden oldum."),
+                    Triple("Kasas 28:24 • Hayır istemek","رَبِّ إِنِّي لِمَا أَنْزَلْتَ إِلَيَّ مِنْ خَيْرٍ فَقِيرٌ","Rabbim! Bana indireceğin her hayra muhtacım."),
+                    Triple("Enbiyâ 21:83 • Eyyûb peygamberin duası","أَنِّي مَسَّنِيَ الضُّرُّ وَأَنْتَ أَرْحَمُ الرَّاحِمِينَ","Bana sıkıntı dokundu; sen merhametlilerin en merhametlisisin."),
+                    Triple("Âl-i İmrân 3:16 • Bağışlanma","رَبَّنَا إِنَّنَا آمَنَّا فَاغْفِرْ لَنَا ذُنُوبَنَا وَقِنَا عَذَابَ النَّارِ","Rabbimiz! İman ettik. Günahlarımızı bağışla ve bizi ateşin azabından kor."),
+                    Triple("Bakara 2:286 • Gücümüzün üstünde yük","رَبَّنَا وَلَا تُحَمِّلْنَا مَا لَا طَاقَةَ لَنَا بِهِ","Rabbimiz! Gücümüzün yetmeyeceği yükü bize yükleme."),
+                    Triple("İbrâhîm 14:41 • Anne baba için","رَبَّنَا اغْفِرْ لِي وَلِوَالِدَيَّ وَلِلْمُؤْمِنِينَ يَوْمَ يَقُومُ الْحِسَابُ","Rabbimiz! Hesap gününde beni, anne babamı ve müminleri bağışla."),
+                    Triple("Tâhâ 20:25 • Gönül ferahlığı","رَبِّ اشْرَحْ لِي صَدْرِي","Rabbim! Gönlüme ferahlık ver.")
                 )
                 val duaSurahNumbers=mapOf(
                     "Bakara 2:201" to (2 to 201),
@@ -1488,7 +1497,14 @@ class MainActivity : Activity(), SensorEventListener {
                     "A'râf 7:23" to (7 to 23),
                     "Âl-i İmrân 3:8" to (3 to 8),
                     "İbrâhîm 14:40" to (14 to 40),
-                    "Furkân 25:74" to (25 to 74)
+                    "Furkân 25:74" to (25 to 74),
+                    "Enbiyâ 21:87" to (21 to 87),
+                    "Kasas 28:24" to (28 to 24),
+                    "Enbiyâ 21:83" to (21 to 83),
+                    "Âl-i İmrân 3:16" to (3 to 16),
+                    "Bakara 2:286" to (2 to 286),
+                    "İbrâhîm 14:41" to (14 to 41),
+                    "Tâhâ 20:25" to (20 to 25)
                 )
                 val duaReciters=listOf(
                     "Mişârî Râşid el-Afâsî" to "ar.alafasy",
@@ -1579,7 +1595,17 @@ class MainActivity : Activity(), SensorEventListener {
                     Triple("Abdest","Abdest sonrası","Eşhedü en lâ ilâhe illallâhü vahdehû lâ şerîke leh ve eşhedü enne Muhammeden abdühû ve resûlüh."),
                     Triple("Hava","Yağmur yağınca","Allâhümme sayyiben nâfi‘â."),
                     Triple("Hava","Rüzgârda","Allâhümme innî es'elüke hayrahâ ve eûzü bike min şerrihâ."),
-                    Triple("Topluluk","Meclis kefareti","Sübhânekellâhümme ve bi-hamdike eşhedü en lâ ilâhe illâ ente estağfiruke ve etûbü ileyk.")
+                    Triple("Topluluk","Meclis kefareti","Sübhânekellâhümme ve bi-hamdike eşhedü en lâ ilâhe illâ ente estağfiruke ve etûbü ileyk."),
+                    Triple("Kur'an","Yunus peygamberin duası (Enbiyâ 21:87)","Lâ ilâhe illâ ente sübhâneke innî küntü minez-zâlimîn."),
+                    Triple("Kur'an","Hayır istemek (Kasas 28:24)","Rabbi innî limâ enzelte ileyye min hayrin fakîr."),
+                    Triple("Kur'an","Anne baba için (İbrâhîm 14:41)","Rabbenâğfirlî ve li-vâlideyye ve lil-mü'minîne yevme yekûmül-hisâb."),
+                    Triple("Kur'an","Gönül ferahlığı (Tâhâ 20:25)","Rabbişrah lî sadrî."),
+                    Triple("Kur'an","Gücümüzün üstünde yük (Bakara 2:286)","Rabbenâ ve lâ tühammilnâ mâ lâ tâkate lenâ bih."),
+                    Triple("Zikir","Havkale","Lâ havle ve lâ kuvvete illâ billâh."),
+                    Triple("Zikir","Sübhânallâhi ve bihamdihî","Sübhânallâhi ve bihamdihî."),
+                    Triple("Bağışlanma","Rabbim beni bağışla","Rabbiğfirlî."),
+                    Triple("Korunma","Şeytanın vesvesesinden","Eûzü billâhi mineş-şeytânirracîm."),
+                    Triple("Şükür","Nimete hamd","Elhamdülillâhi rabbil âlemîn.")
                 )
                 val duaFavorites=prefs.getStringSet("favorite_duas",emptySet())?.toMutableSet() ?: mutableSetOf()
                 val categories=listOf("Tümü")+duas.map { it.first }.distinct()
