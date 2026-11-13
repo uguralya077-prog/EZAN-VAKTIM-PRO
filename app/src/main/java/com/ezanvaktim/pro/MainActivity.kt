@@ -2328,6 +2328,22 @@ class MainActivity : Activity(), SensorEventListener {
                 "Ağrıyan yere dua" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/243.mp3"
                 "Güven ve tevekkül" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/83.mp3"
                 "Nimetin devamı" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/81.mp3"
+                                "Yemekten önce" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/178.mp3"
+                "Mescide girerken" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/20.mp3"
+                "Mescitten çıkarken" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/21.mp3"
+                "Yolculuk duası" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/207.mp3"
+                "Bineğe binerken" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/206.mp3"
+                "Yolculuktan dönüş" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/217.mp3"
+                "Nazardan korunma" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/146.mp3"
+                "Afiyet istemek" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/84.mp3"
+                "Namazdan sonra zikir" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/67.mp3"
+                "Rabbim beni bağışla" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/48.mp3"
+                "Namaz sonrası selam" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/66.mp3"
+                "Namaz sonrası istiğfar" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/66.mp3"
+                "Vefat haberi" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/154.mp3"
+                "Yeni eve girerken" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/97.mp3"
+                "Akşam zikri" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/78.mp3"
+                "Mescide giderken" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/19.mp3"
                 else -> null
             }
             val savedAudio=prefs.getString("hisn_match_"+title,null)
