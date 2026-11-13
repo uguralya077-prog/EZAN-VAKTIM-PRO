@@ -477,7 +477,7 @@ class MainActivity : Activity(), SensorEventListener {
                     "📿 Dijital Tesbih" to "Zikir",
                     "✨ Allah'ın 99 İsmi" to "99 İsim",
                     "📱 Ana Ekran Widget'ı" to "Widget",
-                    "🗓 Hicri Takvim ve Dini Günler" to "Hicri Takvim",
+                    "🗓 Dini Günler ve Bayramlar" to "Hicri Takvim",
                     "🧎 Namaz ve Kaza Takibi" to "Namaz Takibi",
                     "📚 Hatim Takibi" to "Hatim Takibi",
                     "💰 Zekât Hesaplayıcı" to "Zekât",
@@ -2397,7 +2397,7 @@ class MainActivity : Activity(), SensorEventListener {
         val shortestTurn=if(relative>180) relative-360 else relative
         if(section!="Kıble") return
         dial?.angle=relative.toFloat()
-        compass.text="🕋\nKıble: %.1f° (gerçek kuzey)\nPusula yönü: %.1f° (gerçek kuzey)\nKıbleye dönüş: %.1f° %s".format(Locale.getDefault(),bearing,azimuth,kotlin.math.abs(shortestTurn),if(shortestTurn<0) "sola" else "sağa")
+        compass.text=if(kotlin.math.abs(shortestTurn)<5.0) "🕋 Kıble yönündesiniz" else if(shortestTurn<0) "🕋 Sola dönün" else "🕋 Sağa dönün"
     }
     override fun onAccuracyChanged(sensor:Sensor?,accuracy:Int) {}
 }
