@@ -1709,6 +1709,15 @@ class MainActivity : Activity(), SensorEventListener {
                             addView(text(group.uppercase(Locale("tr","TR")),13f,gold))
                             addView(text(title,19f,white))
                             addView(text(body,17f,gold))
+                            val localDuaAudio=duaAudioPath(title)
+                            val hasLocalDuaAudio=localDuaAudio.isFile && localDuaAudio.length()>=1024L
+                            val isQuranDua=Regex("""\\(([^)]*?)\\s+(\\d+):(\\d+)\\)""").containsMatchIn(title)
+                            addView(text(
+                                if(hasLocalDuaAudio) "✓ Ses kaydı telefonda • internetsiz dinlenebilir"
+                                else if(isQuranDua) "♫ Hafız tilaveti • internet gerekli"
+                                else "♫ Cihaz sesli okuması • hafız kaydı henüz yok",
+                                13f,gold
+                            ))
                             addView(button("▶ Duayı sesli dinle") {
                                 val ayah=Regex("""\\(([^)]*?)\\s+(\\d+):(\\d+)\\)""").find(title)
                                 val surah=ayah?.groupValues?.get(1)?.trim()
@@ -1718,7 +1727,7 @@ class MainActivity : Activity(), SensorEventListener {
                                     "Kasas" -> 28; "Haşr" -> 59; else -> null
                                 }
                                 val verse=ayah?.groupValues?.get(3)?.toIntOrNull()
-                                if(duaAudioPath(title).isFile && duaAudioPath(title).length()>=1024L)
+                                if(hasLocalDuaAudio)
                                     playDailyDua(title,body)
                                 else if(number!=null && verse!=null)
                                     playQuranVerse(number,verse,dailyDuaReciters[dailyDuaReciter.selectedItemPosition].second)
