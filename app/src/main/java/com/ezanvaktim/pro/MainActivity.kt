@@ -2167,7 +2167,8 @@ class MainActivity : Activity(), SensorEventListener {
         val file=duaAudioPath(title)
         if(!file.isFile || file.length()<1024L) {
             stopTilavet()
-            Toast.makeText(this,"Hafız kaydı yok; cihazın sesli okuma motoru kullanılıyor",Toast.LENGTH_SHORT).show()
+            stopReading()
+            Toast.makeText(this,"Bu dua için gerçek hafız kaydı henüz yok. Telefonun sesli okuması deneniyor.",Toast.LENGTH_LONG).show()
             readAloud(body,false)
             return
         }
