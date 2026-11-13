@@ -2211,6 +2211,33 @@ class MainActivity : Activity(), SensorEventListener {
             .joinToString("") { "%02x".format(it) }
         return java.io.File(java.io.File(filesDir,"daily_dua_audio"),"$hash.audio")
     }
+    private fun chooseHisnAudioForDua(title:String) {
+        try {
+            val raw=assets.open("hisn_audio_catalog.json").bufferedReader(Charsets.UTF_8).use { it.readText() }
+            val items=org.json.JSONArray(raw)
+            val labels=(0 until items.length()).map { i ->
+                val item=items.getJSONObject(i)
+                "${i+1}. ${item.getString("category")} — ${item.getString("text").take(55)}"
+            }.toTypedArray()
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Dua sesini eşleştir: "+title)
+                .setItems(labels) { _,i ->
+                    val item=items.getJSONObject(i)
+                    android.app.AlertDialog.Builder(this)
+                        .setTitle(title)
+                        .setMessage("Seçilen kaydın Arapça metni:\n\n"+item.getString("text")+"\n\nMetin doğruysa eşleştirin.")
+                        .setPositiveButton("Bu sesi eşleştir") { _,_ ->
+                            prefs.edit().putString("hisn_match_"+title,item.getString("audio")).apply()
+                            Toast.makeText(this,"Dua ses eşleşmesi kaydedildi.",Toast.LENGTH_SHORT).show()
+                        }
+                        .setNegativeButton("İptal",null).show()
+                }
+                .setNegativeButton("Kapat",null).show()
+        } catch(_:Exception) {
+            Toast.makeText(this,"Ses arşivi açılamadı.",Toast.LENGTH_LONG).show()
+        }
+    }
+
     private fun showHisnAudioCatalog() {
         try {
             val raw=assets.open("hisn_audio_catalog.json").bufferedReader(Charsets.UTF_8).use { it.readText() }
@@ -2303,13 +2330,17 @@ class MainActivity : Activity(), SensorEventListener {
                 "Nimetin devamı" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/81.mp3"
                 else -> null
             }
-            if(verifiedUrl!=null) {
+            val savedAudio=prefs.getString("hisn_match_"+title,null)
+            val audioUrl=if(savedAudio!=null && Regex("[0-9]+\\.mp3").matches(savedAudio))
+                "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/"+savedAudio
+                else verifiedUrl
+            if(audioUrl!=null) {
                 stopReading()
                 stopTilavet()
                 try {
                     val player=android.media.MediaPlayer()
                     tilavetPlayer=player
-                    player.setDataSource(verifiedUrl)
+                    player.setDataSource(audioUrl)
                     player.setOnPreparedListener { if(tilavetPlayer===it) it.start() }
                     player.setOnCompletionListener { if(tilavetPlayer===it) stopTilavet() }
                     player.setOnErrorListener { _,_,_ ->
@@ -2326,8 +2357,12 @@ class MainActivity : Activity(), SensorEventListener {
             }
             stopTilavet()
             stopReading()
-            Toast.makeText(this,"Bu dua için doğrulanmış hafız kaydı henüz yok; cihaz sesli okuması deneniyor.",Toast.LENGTH_LONG).show()
-            readAloud(body,false)
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Ses kaydı eşleşmedi: "+title)
+                .setMessage("Bu dua için doğrulanmış kayıt yok. 267 kayıtlık arşivden Arapça metni karşılaştırarak bir ses eşleştirebilir veya telefonun sesli okumasını kullanabilirsiniz.")
+                .setPositiveButton("Arşivden eşleştir") { _,_ -> chooseHisnAudioForDua(title) }
+                .setNegativeButton("Telefonla oku") { _,_ -> readAloud(body,false) }
+                .show()
             return
         }
         stopReading()
