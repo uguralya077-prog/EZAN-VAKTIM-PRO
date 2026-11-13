@@ -1752,7 +1752,7 @@ class MainActivity : Activity(), SensorEventListener {
                             addView(text(body,17f,gold))
                             val localDuaAudio=duaAudioPath(title)
                             val hasLocalDuaAudio=localDuaAudio.isFile && localDuaAudio.length()>=1024L
-                            val quranMatch=Regex("""\\(([^)]*?)\\s+(\\d+):(\\d+)\\)""").find(title)
+                            val quranMatch=Regex("""\(([^)]*?)\s+(\d+):(\d+)\)""").find(title)
                             val quranSurahName=quranMatch?.groupValues?.get(1)?.trim()
                             val quranSurahNumber=when(quranSurahName) {
                                 "Bakara" -> 2; "Tâhâ" -> 20; "A'râf" -> 7; "Âl-i İmrân" -> 3
@@ -1779,7 +1779,7 @@ class MainActivity : Activity(), SensorEventListener {
                                 13f,gold
                             ))
                             addView(button("▶ Duayı sesli dinle") {
-                                val ayah=Regex("""\\(([^)]*?)\\s+(\\d+):(\\d+)\\)""").find(title)
+                                val ayah=Regex("""\(([^)]*?)\s+(\d+):(\d+)\)""").find(title)
                                 val surah=ayah?.groupValues?.get(1)?.trim()
                                 val number=when(surah) {
                                     "Bakara" -> 2; "Tâhâ" -> 20; "A'râf" -> 7; "Âl-i İmrân" -> 3
