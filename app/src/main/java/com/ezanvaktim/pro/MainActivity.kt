@@ -2212,9 +2212,36 @@ class MainActivity : Activity(), SensorEventListener {
     private fun playDailyDua(title:String,body:String) {
         val file=duaAudioPath(title)
         if(!file.isFile || file.length()<1024L) {
+            // Only an exact, manually verified text-to-audio match is streamed.
+            // Do not bundle or cache third-party recordings without permission.
+            val verifiedUrl=when(title) {
+                "Uyanınca" -> "https://audio.opendua.org/hisn/v0.0.2/OD-001.mp3"
+                else -> null
+            }
+            if(verifiedUrl!=null) {
+                stopReading()
+                stopTilavet()
+                try {
+                    val player=android.media.MediaPlayer()
+                    tilavetPlayer=player
+                    player.setDataSource(verifiedUrl)
+                    player.setOnPreparedListener { if(tilavetPlayer===it) it.start() }
+                    player.setOnCompletionListener { if(tilavetPlayer===it) stopTilavet() }
+                    player.setOnErrorListener { _,_,_ ->
+                        stopTilavet()
+                        Toast.makeText(this,"Ses kaydı açılamadı; internet bağlantısını kontrol edin.",Toast.LENGTH_LONG).show()
+                        true
+                    }
+                    player.prepareAsync()
+                } catch(_:Exception) {
+                    stopTilavet()
+                    Toast.makeText(this,"Ses kaydı açılamadı.",Toast.LENGTH_LONG).show()
+                }
+                return
+            }
             stopTilavet()
             stopReading()
-            Toast.makeText(this,"Bu dua için gerçek hafız kaydı henüz yok. Telefonun sesli okuması deneniyor.",Toast.LENGTH_LONG).show()
+            Toast.makeText(this,"Bu dua için doğrulanmış hafız kaydı henüz yok; cihaz sesli okuması deneniyor.",Toast.LENGTH_LONG).show()
             readAloud(body,false)
             return
         }
