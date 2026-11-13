@@ -1671,6 +1671,12 @@ class MainActivity : Activity(), SensorEventListener {
                     Triple("Kur'an","Cehennemden korunmak (Furkân 25:65)","Rabbenasrif annâ azâbe cehennem, inne azâbehâ kâne garâmâ."),
                     Triple("Kur'an","Sabır istemek (Bakara 2:250)","Rabbenâ efriğ aleynâ sabran ve sebbit akdâmenâ vensurnâ alel-kavmil-kâfirîn.")
                 )
+                val dailyDuaReciters=listOf("Mişârî Râşid el-Afâsî" to "ar.alafasy","Mahmud Halil el-Husarî" to "ar.husary")
+                val dailyDuaReciter=Spinner(this).apply {
+                    adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,dailyDuaReciters.map { it.first })
+                }
+                root.addView(text("Hafız seçimi • Kur'an ayetlerinden dualar",15f,gold))
+                root.addView(dailyDuaReciter)
                 val duaFavorites=prefs.getStringSet("favorite_duas",emptySet())?.toMutableSet() ?: mutableSetOf()
                 val categories=listOf("Tümü")+duas.map { it.first }.distinct()
                 val category=Spinner(this).apply {
@@ -1703,7 +1709,19 @@ class MainActivity : Activity(), SensorEventListener {
                             addView(text(group.uppercase(Locale("tr","TR")),13f,gold))
                             addView(text(title,19f,white))
                             addView(text(body,17f,gold))
-                            addView(button("▶ Duayı sesli dinle") { playDailyDua(title,body) })
+                            addView(button("▶ Duayı sesli dinle") {
+                                val ayah=Regex("""\\(([^)]*?)\\s+(\\d+):(\\d+)\\)""").find(title)
+                                val surah=ayah?.groupValues?.get(1)?.trim()
+                                val number=when(surah) {
+                                    "Bakara" -> 2; "Tâhâ" -> 20; "A'râf" -> 7; "Âl-i İmrân" -> 3
+                                    "İbrâhîm" -> 14; "Furkân" -> 25; "Enbiyâ" -> 21
+                                    "Kasas" -> 28; "Haşr" -> 59; else -> null
+                                }
+                                val verse=ayah?.groupValues?.get(3)?.toIntOrNull()
+                                if(number!=null && verse!=null)
+                                    playQuranVerse(number,verse,dailyDuaReciters[dailyDuaReciter.selectedItemPosition].second)
+                                else playDailyDua(title,body)
+                            })
                             addView(button("♫ Bu dua için ses kaydı seç") { selectDailyDua(title) })
                             addView(button("■ Dinlemeyi durdur") { stopTilavet() })
                             addView(button(if(duaFavorites.contains(title)) "★ Favorilerimden çıkar" else "☆ Favorilere ekle") {
