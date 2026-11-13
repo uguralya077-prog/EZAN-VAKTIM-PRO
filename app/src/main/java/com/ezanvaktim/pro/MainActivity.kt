@@ -1852,7 +1852,8 @@ class MainActivity : Activity(), SensorEventListener {
                                     playQuranVerse(number,verse,dailyDuaReciters[dailyDuaReciter.selectedItemPosition].second)
                                 else playDailyDua(title,body)
                             })
-                            addView(button("♫ Bu dua için ses kaydı seç") { selectDailyDua(title) })
+                            addView(button("♫ Arşivden gerçek dua sesi eşleştir") { chooseHisnAudioForDua(title) })
+                            addView(button("♫ Telefondan ses dosyası seç") { selectDailyDua(title) })
                             addView(button("■ Dinlemeyi durdur") { stopTilavet(); stopReading() })
                             addView(button(if(duaFavorites.contains(title)) "★ Favorilerimden çıkar" else "☆ Favorilere ekle") {
                                 if(!duaFavorites.add(title)) duaFavorites.remove(title)
