@@ -1714,6 +1714,9 @@ class MainActivity : Activity(), SensorEventListener {
                     Triple("Kur'an","Cehennemden korunmak (Furkân 25:65)","Rabbenasrif annâ azâbe cehennem, inne azâbehâ kâne garâmâ."),
                     Triple("Kur'an","Sabır istemek (Bakara 2:250)","Rabbenâ efriğ aleynâ sabran ve sebbit akdâmenâ vensurnâ alel-kavmil-kâfirîn.")
                 )
+                val dailyDuaMeanings=try {
+                    org.json.JSONObject(assets.open("daily_dua_meanings_tr.json").bufferedReader(Charsets.UTF_8).use { it.readText() })
+                } catch(_:Exception) { org.json.JSONObject() }
                 val dailyDuaReciters=listOf("Mişârî Râşid el-Afâsî" to "ar.alafasy","Mahmud Halil el-Husarî" to "ar.husary")
                 val dailyDuaReciter=Spinner(this).apply {
                     adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,dailyDuaReciters.map { it.first })
@@ -1805,6 +1808,7 @@ class MainActivity : Activity(), SensorEventListener {
                             addView(text(group.uppercase(Locale("tr","TR")),13f,gold))
                             addView(text(title,19f,white))
                             addView(text(body,17f,gold))
+                            addView(text("Türkçe anlamı: "+dailyDuaMeanings.optString(title,"Açıklama bulunamadı."),15f,white))
                             val localDuaAudio=duaAudioPath(title)
                             val hasLocalDuaAudio=localDuaAudio.isFile && localDuaAudio.length()>=1024L
                             val quranMatch=Regex("""\(([^)]*?)\s+(\d+):(\d+)\)""").find(title)
