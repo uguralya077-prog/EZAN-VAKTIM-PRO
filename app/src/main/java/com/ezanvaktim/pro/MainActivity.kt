@@ -2215,7 +2215,10 @@ class MainActivity : Activity(), SensorEventListener {
             // Only an exact, manually verified text-to-audio match is streamed.
             // Do not bundle or cache third-party recordings without permission.
             val verifiedUrl=when(title) {
-                "Uyanınca" -> "https://audio.opendua.org/hisn/v0.0.2/OD-001.mp3"
+                "Uyanınca" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/1.mp3"
+                "Uyumadan önce" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/105.mp3"
+                "Evden çıkarken" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/16.mp3"
+                "Eve girerken" -> "https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/18.mp3"
                 else -> null
             }
             if(verifiedUrl!=null) {
