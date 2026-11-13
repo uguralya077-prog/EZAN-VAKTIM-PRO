@@ -1733,6 +1733,13 @@ class MainActivity : Activity(), SensorEventListener {
                 root.addView(search)
                 val onlyDuaFavorites=CheckBox(this).apply { text="Yalnızca favori dualarım"; setTextColor(gold) }
                 root.addView(onlyDuaFavorites)
+                val duaCountLabel=text("Toplam ${duas.size} dua ve zikir • tümü gösteriliyor",15f,gold)
+                root.addView(duaCountLabel)
+                root.addView(button("Bütün duaları göster • Filtreleri temizle") {
+                    onlyDuaFavorites.isChecked=false
+                    search.setText("")
+                    category.setSelection(0)
+                })
                 val results=LinearLayout(this).apply { orientation=LinearLayout.VERTICAL }
                 root.addView(results)
                 fun refreshDuas() {
@@ -1814,6 +1821,7 @@ class MainActivity : Activity(), SensorEventListener {
                             })
                         })
                     }
+                    duaCountLabel.text="Gösterilen: $matching / ${duas.size} dua ve zikir"
                     if(matching==0) results.addView(text("Bu filtreyle eşleşen dua bulunamadı.",15f))
                 }
                 onlyDuaFavorites.setOnCheckedChangeListener { _,_ -> refreshDuas() }
