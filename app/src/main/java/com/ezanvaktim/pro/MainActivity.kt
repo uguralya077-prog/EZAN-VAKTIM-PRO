@@ -1718,12 +1718,14 @@ class MainActivity : Activity(), SensorEventListener {
                                     "Kasas" -> 28; "Haşr" -> 59; else -> null
                                 }
                                 val verse=ayah?.groupValues?.get(3)?.toIntOrNull()
-                                if(number!=null && verse!=null)
+                                if(duaAudioPath(title).isFile && duaAudioPath(title).length()>=1024L)
+                                    playDailyDua(title,body)
+                                else if(number!=null && verse!=null)
                                     playQuranVerse(number,verse,dailyDuaReciters[dailyDuaReciter.selectedItemPosition].second)
                                 else playDailyDua(title,body)
                             })
                             addView(button("♫ Bu dua için ses kaydı seç") { selectDailyDua(title) })
-                            addView(button("■ Dinlemeyi durdur") { stopTilavet() })
+                            addView(button("■ Dinlemeyi durdur") { stopTilavet(); stopReading() })
                             addView(button(if(duaFavorites.contains(title)) "★ Favorilerimden çıkar" else "☆ Favorilere ekle") {
                                 if(!duaFavorites.add(title)) duaFavorites.remove(title)
                                 prefs.edit().putStringSet("favorite_duas",duaFavorites.toSet()).apply()
@@ -1756,7 +1758,7 @@ class MainActivity : Activity(), SensorEventListener {
                     override fun afterTextChanged(s:android.text.Editable?) {}
                 })
                 refreshDuas()
-                root.addView(text("Hafız kaydı eklenmiş dualarda gerçek kayıt, diğerlerinde telefonun Türkçe sesli okuma motoru kullanılır. Bu ses hafız tilaveti değildir.",13f))
+                root.addView(text("Öncelik: telefona kaydedilmiş gerçek dua sesi. Kur’an ayetlerinde seçilen hafızın çevrim içi tilaveti kullanılır. Diğerlerinde cihazın sesli okuması devreye girer; bu hafız sesi değildir.",13f))
             }
             "Zikir" -> {
                 zikrCount=prefs.getInt("zikr_count",0)
