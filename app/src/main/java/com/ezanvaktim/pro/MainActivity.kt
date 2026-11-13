@@ -1669,7 +1669,7 @@ class MainActivity : Activity(), SensorEventListener {
                             addView(text(group.uppercase(Locale("tr","TR")),13f,gold))
                             addView(text(title,19f,white))
                             addView(text(body,17f,gold))
-                            addView(button("▶ Hafız kaydını dinle") { playDailyDua(title) })
+                            addView(button("▶ Duayı sesli dinle") { playDailyDua(title,body) })
                             addView(button("♫ Bu dua için ses kaydı seç") { selectDailyDua(title) })
                             addView(button("■ Dinlemeyi durdur") { stopTilavet() })
                             addView(button(if(duaFavorites.contains(title)) "★ Favorilerimden çıkar" else "☆ Favorilere ekle") {
@@ -1704,12 +1704,16 @@ class MainActivity : Activity(), SensorEventListener {
                     override fun afterTextChanged(s:android.text.Editable?) {}
                 })
                 refreshDuas()
-                root.addView(text("Günlük dua seçkisi; metinler Latin harfli okunuşlardır. Kayıt bulunmayan dualar hafız sesi olarak sunulmaz.",13f))
+                root.addView(text("Hafız kaydı eklenmiş dualarda gerçek kayıt, diğerlerinde telefonun Türkçe sesli okuma motoru kullanılır. Bu ses hafız tilaveti değildir.",13f))
             }
             "Zikir" -> {
                 zikrCount=prefs.getInt("zikr_count",0)
                 root.addView(text("DİJİTAL TESBİH",23f,gold))
                 root.addView(text("Hedef seç, zikrini say ve kaldığın yerden devam et.",15f))
+                root.addView(button("▶ Sübhanallah sesli oku") { readAloud("Sübhânallâh",false) })
+                root.addView(button("▶ Elhamdülillah sesli oku") { readAloud("Elhamdülillâh",false) })
+                root.addView(button("▶ Allahu ekber sesli oku") { readAloud("Allâhu ekber",false) })
+                root.addView(button("■ Okumayı durdur") { stopReading() })
                 val goals=arrayOf("33","99","100","1000","Sınırsız")
                 val selector=Spinner(this).apply {
                     adapter=ArrayAdapter(this@MainActivity,android.R.layout.simple_spinner_dropdown_item,goals)
@@ -2028,10 +2032,12 @@ class MainActivity : Activity(), SensorEventListener {
             .joinToString("") { "%02x".format(it) }
         return java.io.File(java.io.File(filesDir,"daily_dua_audio"),"$hash.audio")
     }
-    private fun playDailyDua(title:String) {
+    private fun playDailyDua(title:String,body:String) {
         val file=duaAudioPath(title)
         if(!file.isFile || file.length()<1024L) {
-            Toast.makeText(this,"Bu dua için gerçek ses kaydı henüz eklenmedi",Toast.LENGTH_LONG).show()
+            stopTilavet()
+            Toast.makeText(this,"Hafız kaydı yok; cihazın sesli okuma motoru kullanılıyor",Toast.LENGTH_SHORT).show()
+            readAloud(body,false)
             return
         }
         stopReading()
