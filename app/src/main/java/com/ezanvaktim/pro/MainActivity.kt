@@ -508,11 +508,41 @@ class MainActivity : Activity(), SensorEventListener {
                     addView(text(today.format(DateTimeFormatter.ofPattern("d MMMM yyyy",Locale("tr","TR"))),17f))
                     addView(text("Hicri tarih hesaplamadır; resmî takvimle gözlem ve yöntem farkı nedeniyle bir gün değişebilir.",13f))
                 })
-                root.addView(text("Önemli hicri günler",19f,gold))
-                listOf("1 Muharrem • Hicri yılbaşı","10 Muharrem • Aşure günü","12 Rebiülevvel • Mevlid","1 Ramazan • Ramazan başlangıcı","27 Ramazan • Kadir Gecesi (yaygın kabul)","1 Şevval • Ramazan Bayramı","10 Zilhicce • Kurban Bayramı").forEach {
-                    root.addView(panel().apply { addView(text(it,16f)) })
+                root.addView(text("DİNİ GÜNLER VE BAYRAMLAR",20f,gold))
+                val events=listOf(
+                    Triple(1,1,"Hicri yılbaşı"),
+                    Triple(1,10,"Aşure günü"),
+                    Triple(3,12,"Mevlid Kandili"),
+                    Triple(7,1,"Üç ayların başlangıcı"),
+                    Triple(7,27,"Miraç Kandili"),
+                    Triple(8,15,"Berat Kandili"),
+                    Triple(9,1,"Ramazan başlangıcı"),
+                    Triple(9,27,"Kadir Gecesi (yaygın kabul)"),
+                    Triple(10,1,"Ramazan Bayramı • 1. gün"),
+                    Triple(10,2,"Ramazan Bayramı • 2. gün"),
+                    Triple(10,3,"Ramazan Bayramı • 3. gün"),
+                    Triple(12,9,"Arefe"),
+                    Triple(12,10,"Kurban Bayramı • 1. gün"),
+                    Triple(12,11,"Kurban Bayramı • 2. gün"),
+                    Triple(12,12,"Kurban Bayramı • 3. gün"),
+                    Triple(12,13,"Kurban Bayramı • 4. gün")
+                )
+                val upcoming=mutableListOf<Pair<LocalDate,String>>()
+                for(year in hyear..hyear+1) {
+                    for((month,day,name) in events) {
+                        try {
+                            val date=LocalDate.from(java.time.chrono.HijrahDate.of(year,month,day))
+                            if(!date.isBefore(today)) upcoming.add(date to name)
+                        } catch(_:java.time.DateTimeException) { }
+                    }
                 }
-                root.addView(text("Kandil ve bayramların Türkiye'deki resmî miladi tarihleri için Diyanet takvimini esas alın.",13f))
+                upcoming.sortedBy { it.first }.take(18).forEach { (date,name) ->
+                    root.addView(panel().apply {
+                        addView(text(name,17f,gold))
+                        addView(text(date.format(DateTimeFormatter.ofPattern("d MMMM yyyy, EEEE",Locale("tr","TR"))),15f))
+                    })
+                }
+                root.addView(text("Tarihler hesaplanan hicri takvime göredir. Kandil ve bayramların Türkiye'deki resmî günleri için Diyanet takvimini esas alın.",13f))
             }
             "Namaz Takibi" -> {
                 root.addView(text("NAMAZ VE KAZA TAKİBİ",23f,gold))
