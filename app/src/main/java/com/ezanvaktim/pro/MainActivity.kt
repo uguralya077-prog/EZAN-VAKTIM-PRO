@@ -64,24 +64,65 @@ class MainActivity : Activity(), SensorEventListener {
         for(i in 0 until surahNumber-1) global+=chapters.getJSONObject(i).getJSONArray("verses").length()
         stopReading()
         stopTilavet()
-        val player=android.media.MediaPlayer()
-        tilavetPlayer=player
-        try {
-            player.setAudioAttributes(android.media.AudioAttributes.Builder()
-                .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
-                .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build())
-            player.setDataSource("https://cdn.islamic.network/quran/audio/128/$reciter/$global.mp3")
-            player.setOnPreparedListener { if(tilavetPlayer===it) it.start() }
-            player.setOnCompletionListener { if(tilavetPlayer===it) stopTilavet() }
-            player.setOnErrorListener { _,_,_ ->
-                Toast.makeText(this,"Hafızın ayet kaydı açılamadı",Toast.LENGTH_LONG).show()
+        val generation=juzPlaybackGeneration
+        val safeReciter=reciter.replace(Regex("[^a-zA-Z0-9._-]"),"")
+        val cacheDir=java.io.File(filesDir,"quran_verse_audio").apply { mkdirs() }
+        val cached=java.io.File(cacheDir,"${safeReciter}_${global}.mp3")
+        fun playFile(file:java.io.File) {
+            if(generation!=juzPlaybackGeneration) return
+            val player=android.media.MediaPlayer()
+            tilavetPlayer=player
+            try {
+                player.setAudioAttributes(android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_MEDIA)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_MUSIC).build())
+                player.setDataSource(file.absolutePath)
+                player.setOnPreparedListener { if(tilavetPlayer===it) it.start() }
+                player.setOnCompletionListener { if(tilavetPlayer===it) stopTilavet() }
+                player.setOnErrorListener { _,_,_ ->
+                    Toast.makeText(this,"Hafız kaydı açılamadı",Toast.LENGTH_LONG).show()
+                    stopTilavet()
+                    true
+                }
+                player.prepareAsync()
+            } catch(e:Exception) {
                 stopTilavet()
-                true
+                Toast.makeText(this,"Ayet sesi açılamadı",Toast.LENGTH_LONG).show()
             }
-            player.prepareAsync()
-        } catch(e:Exception) {
-            stopTilavet()
-            Toast.makeText(this,"Ayet sesi açılamadı",Toast.LENGTH_LONG).show()
+        }
+        if(cached.isFile && cached.length()>1024L) { playFile(cached); return }
+        Toast.makeText(this,"Hafız kaydı indiriliyor; ilk dinlemede internet gerekir",Toast.LENGTH_SHORT).show()
+        thread {
+            val partial=java.io.File(cacheDir,"${safeReciter}_${global}.part")
+            try {
+                val url=java.net.URL("https://cdn.islamic.network/quran/audio/128/$safeReciter/$global.mp3")
+                val connection=url.openConnection().apply {
+                    connectTimeout=12000
+                    readTimeout=20000
+                }
+                var bytes=0L
+                connection.getInputStream().use { input ->
+                    partial.outputStream().use { output ->
+                        val buffer=ByteArray(16384)
+                        while(true) {
+                            val n=input.read(buffer)
+                            if(n<0) break
+                            bytes+=n
+                            if(bytes>12L*1024L*1024L) error("Ses kaydı çok büyük")
+                            output.write(buffer,0,n)
+                        }
+                    }
+                }
+                if(bytes<1024L) error("Geçerli ses kaydı bulunamadı")
+                if(!partial.renameTo(cached)) error("Ses kaydı kaydedilemedi")
+                runOnUiThread { if(generation==juzPlaybackGeneration) playFile(cached) }
+            } catch(e:Exception) {
+                partial.delete()
+                runOnUiThread {
+                    if(generation==juzPlaybackGeneration)
+                        Toast.makeText(this,"Hafız kaydı indirilemedi. İnternet bağlantısını kontrol edin.",Toast.LENGTH_LONG).show()
+                }
+            }
         }
     }
     private fun playJuz(juzIndex:Int,reciter:String) {
