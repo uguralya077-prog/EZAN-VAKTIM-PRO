@@ -1752,10 +1752,29 @@ class MainActivity : Activity(), SensorEventListener {
                             addView(text(body,17f,gold))
                             val localDuaAudio=duaAudioPath(title)
                             val hasLocalDuaAudio=localDuaAudio.isFile && localDuaAudio.length()>=1024L
-                            val isQuranDua=Regex("""\\(([^)]*?)\\s+(\\d+):(\\d+)\\)""").containsMatchIn(title)
+                            val quranMatch=Regex("""\\(([^)]*?)\\s+(\\d+):(\\d+)\\)""").find(title)
+                            val quranSurahName=quranMatch?.groupValues?.get(1)?.trim()
+                            val quranSurahNumber=when(quranSurahName) {
+                                "Bakara" -> 2; "Tâhâ" -> 20; "A'râf" -> 7; "Âl-i İmrân" -> 3
+                                "İbrâhîm" -> 14; "Furkân" -> 25; "Enbiyâ" -> 21
+                                "Kasas" -> 28; "Haşr" -> 59; else -> null
+                            }
+                            val quranVerseNumber=quranMatch?.groupValues?.get(3)?.toIntOrNull()
+                            val cachedVerse=if(quranSurahNumber!=null && quranVerseNumber!=null) {
+                                try {
+                                    val surahs=loadBundledOrImportedQuran().getJSONArray("surahs")
+                                    var globalVerse=quranVerseNumber
+                                    for(index in 0 until quranSurahNumber-1)
+                                        globalVerse+=surahs.getJSONObject(index).getJSONArray("verses").length()
+                                    val selectedReciter=dailyDuaReciters[dailyDuaReciter.selectedItemPosition].second
+                                    java.io.File(filesDir,"quran_verse_audio/$selectedReciter" + "_$globalVerse.mp3")
+                                } catch(_:Exception) { null }
+                            } else null
+                            val cachedVerseAvailable=cachedVerse?.let { it.isFile && it.length()>1024L } ?: false
                             addView(text(
-                                if(hasLocalDuaAudio) "✓ Ses kaydı telefonda • internetsiz dinlenebilir"
-                                else if(isQuranDua) "♫ Hafız tilaveti • internet gerekli"
+                                if(hasLocalDuaAudio) "✓ Dua kaydı telefonda • internetsiz"
+                                else if(cachedVerseAvailable) "✓ Seçilen hafızın ayeti telefonda • internetsiz"
+                                else if(quranSurahNumber!=null) "♫ Hafız tilaveti • ilk dinlemede internet gerekli"
                                 else "♫ Cihaz sesli okuması • hafız kaydı henüz yok",
                                 13f,gold
                             ))
