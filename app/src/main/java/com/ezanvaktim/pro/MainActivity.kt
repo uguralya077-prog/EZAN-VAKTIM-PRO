@@ -1606,6 +1606,8 @@ class MainActivity : Activity(), SensorEventListener {
                     })
                 }
 
+                root.addView(button("▶ Sesli Dua Arşivi • 267 gerçek kayıt") { showHisnAudioCatalog() })
+                root.addView(text("Hisnü'l-Müslim • Arapça metin ve kayıt eşleşmeleri: Islamic Pro Azkar API / Hamad Al-Durayhim. Sesler internet üzerinden oynatılır.",12f,gold))
                 val duas=listOf(
                     Triple("Başlarken","Besmele","Bismillâhirrahmânirrahîm."),
                     Triple("Yemek","Yemekten önce","Bismillâh."),
@@ -2209,6 +2211,53 @@ class MainActivity : Activity(), SensorEventListener {
             .joinToString("") { "%02x".format(it) }
         return java.io.File(java.io.File(filesDir,"daily_dua_audio"),"$hash.audio")
     }
+    private fun showHisnAudioCatalog() {
+        try {
+            val raw=assets.open("hisn_audio_catalog.json").bufferedReader(Charsets.UTF_8).use { it.readText() }
+            val items=org.json.JSONArray(raw)
+            val titles=(0 until items.length()).map { i ->
+                val item=items.getJSONObject(i)
+                "${i+1}. ${item.getString("category")} — ${item.getString("text").take(65)}"
+            }.toTypedArray()
+            android.app.AlertDialog.Builder(this)
+                .setTitle("Sesli Dua Arşivi • ${items.length()} kayıt")
+                .setItems(titles) { _,index ->
+                    val item=items.getJSONObject(index)
+                    val arabic=item.getString("text")
+                    val audio=item.getString("audio")
+                    android.app.AlertDialog.Builder(this)
+                        .setTitle(item.getString("category"))
+                        .setMessage(arabic)
+                        .setPositiveButton("▶ Gerçek sesi dinle") { _,_ ->
+                            stopReading()
+                            stopTilavet()
+                            try {
+                                val player=android.media.MediaPlayer()
+                                tilavetPlayer=player
+                                player.setDataSource("https://raw.githubusercontent.com/YousefAsalya/Islamic-Pro-azkar-API/main/audio/"+audio)
+                                player.setOnPreparedListener { if(tilavetPlayer===it) it.start() }
+                                player.setOnCompletionListener { if(tilavetPlayer===it) stopTilavet() }
+                                player.setOnErrorListener { _,_,_ ->
+                                    stopTilavet()
+                                    Toast.makeText(this,"Kayıt açılamadı; internet bağlantısını kontrol edin.",Toast.LENGTH_LONG).show()
+                                    true
+                                }
+                                player.prepareAsync()
+                            } catch(_:Exception) {
+                                stopTilavet()
+                                Toast.makeText(this,"Ses kaydı açılamadı.",Toast.LENGTH_LONG).show()
+                            }
+                        }
+                        .setNegativeButton("Kapat",null)
+                        .show()
+                }
+                .setNegativeButton("Kapat",null)
+                .show()
+        } catch(_:Exception) {
+            Toast.makeText(this,"Sesli dua arşivi okunamadı.",Toast.LENGTH_LONG).show()
+        }
+    }
+
     private fun playDailyDua(title:String,body:String) {
         val file=duaAudioPath(title)
         if(!file.isFile || file.length()<1024L) {
